@@ -1,1 +1,1 @@
-# EcoPay---Team-Luffy
+# EcoPay - A Green Wallet for Recyclables
