@@ -4,9 +4,9 @@ EcoPay is a sustainability-driven web platform that allows users to deposit recy
 <b>Team Members</b>
 - [Rohankumar Bind(L)](https://github.com/yourgithub)
 - [Velino Leitao](https://github.com/AlexLeitao19)
-- [Pritam Dhamaaskar](https://github.com/member3)
-- [Roshan Gawas ](https://github.com/member2)
-- [Ashwin Pawar](https://github.com/AshwinPawar09)
+- [Pritam Dhamaaskar](https://github.com/pritamd11-08)
+- [Roshan Gawas ](https://github.com/Roshan-707)
+- [Ashwin Pawar](https://github.com/AshwinPawar0)
 
 <b>Tech stack</b>
 - Frontend: TBD
