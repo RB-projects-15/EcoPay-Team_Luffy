@@ -4,8 +4,6 @@
 **Team:** Team Luffy  
 **Team Members:** Rohankumar Bind, Velino Alex Leitao, Pritam Dhamaskar, Roshan Rajan Gawas, Ashwin Pawar
 
-**BridgeAura Summit – Assignment 3**  
-**Last Updated:** 2025-08-09
 
 ---
 
