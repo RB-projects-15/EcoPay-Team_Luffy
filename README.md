@@ -2,7 +2,7 @@
 EcoPay is a sustainability-driven web platform that allows users to deposit recyclable materials like plastic bottles and paper in exchange for wallet credits. These credits can be used at eco-friendly partner stores, promoting both recycling and conscious consumerism.
 
 <b>Team Members</b>
-- [Rohankumar Bind](https://github.com/yourgithub)
+- [Rohankumar Bind(Leader)](https://github.com/yourgithub)
 - [Velino Leitao](https://github.com/AlexLeitao19)
 - [Pritam Dhamaaskar](https://github.com/member3)
 - [Roshan Gawas ](https://github.com/member2)
