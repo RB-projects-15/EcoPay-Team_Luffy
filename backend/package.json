@@ -1,0 +1,19 @@
+{
+  "name": "ecopay-backend-assignment4",
+  "version": "1.0.0",
+  "description": "Simple Express backend for EcoPay assignment (in-memory data + Swagger)",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "swagger-ui-express": "^4.6.3",
+    "uuid": "^9.0.1"
+  }
+}
