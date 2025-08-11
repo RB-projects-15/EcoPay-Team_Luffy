@@ -1,116 +1,85 @@
-🌱 EcoPay - Backend API (Assignment 4)
-[![Node.js](https://img.shields.io/badge/Node.js](https://img.shields.io/badge/Express.js-4.x-black?](https://img.shields.io/b](https://img.shields.io/badge/Docs-Swagger_UI-green? the backend implementation for EcoPay, built according to the API contract.
-It uses Node.js (Express) with in-memory data storage (no database required for now) and includes Swagger/OpenAPI interactive documentation.
+<h1 align="center">🌱 EcoPay - Backend API </h1>
 
-📑 Table of Contents
-Project Structure
+<p align="center">
+  <b>Backend implementation for EcoPay</b>, built according to the API contract.<br>
+  Uses <b>Node.js (Express.js)</b> with in-memory data storage (no database required for now) and includes <b>Swagger interactive documentation</b>.
+</p>
 
-How to Run Locally
+---
 
-API Endpoints
+<h2>🚀 How to Run Locally</h2>
 
-Testing Flow in Swagger UI
-
-Submission Info
-
-📂 Project Structure
-text
-backend/
-├── index.js        # Main Express server
-├── package.json    # Dependencies and scripts
-├── swagger.json    # OpenAPI specification
-├── README.md       # Documentation (this file)
-└── .gitignore
-🚀 How to Run Locally
+<pre>
 1️⃣ Clone the Repository
+$ git clone https://github.com/RB-projects-15/EcoPay-Team_Luffy.git
+$ cd EcoPay-Team_Luffy/backend
 
-bash
-git clone https://github.com/RB-projects-15/EcoPay-Team_Luffy.git
-cd EcoPay-Team_Luffy/backend
 2️⃣ Install Dependencies
+$ npm install
 
-bash
-npm install
 3️⃣ Start the Server
+$ npm start
+✅ Server listening on http://localhost:3000
 
-bash
-npm start
-✅ If successful, you will see:
+4️⃣ Open Swagger API Documentation:
+➡ http://localhost:3000/api-docs
+</pre>
 
-text
-Server listening on http://localhost:3000
-4️⃣ Open API Documentation
-Go to:
+---
 
-text
-http://localhost:3000/api-docs
-You will see Swagger UI, where you can test all API endpoints.
+<h2>📡 API Endpoints</h2>
 
-🛠 API Endpoints
-🔑 Authentication
-POST /api/auth/register – Register a new user
+<ul>
+  <li>🔑 <b>Authentication:</b> POST /api/auth/register → Register a new user | POST /api/auth/login → Login & get JWT token</li>
+  <li>♻ <b>Waste Management:</b> POST /api/waste/scan → Scan waste QR code | POST /api/waste/upload → Upload waste image | POST /api/waste/submit → Submit waste entry & earn points</li>
+  <li>💳 <b>Transactions:</b> GET /api/transactions/{user_id} → Get user transaction history</li>
+  <li>🎁 <b>Rewards:</b> POST /api/rewards/redeem → Redeem reward using points</li>
+</ul>
 
-POST /api/auth/login – Login and get JWT token
+---
 
-♻ Waste Management
-POST /api/waste/scan – Scan waste QR code (simulated)
+<h2>🧪 Testing Flow in Swagger UI</h2>
 
-POST /api/waste/upload – Upload waste image (simulated)
-
-POST /api/waste/submit – Submit waste entry and earn points
-
-💳 Transactions
-GET /api/transactions/{user_id} – Get user transaction history
-
-🎁 Rewards
-POST /api/rewards/redeem – Redeem reward using points
-
-🧪 Testing Flow in Swagger UI
-1. Register a User
-
-json
+<pre>
+1️⃣ Register a User:
 {
   "name": "Rohan Kumar",
   "email": "rohan@example.com",
   "password": "123456"
 }
-2. Login
 
-json
+2️⃣ Login:
 {
   "email": "rohan@example.com",
   "password": "123456"
 }
-3. Scan Waste QR
 
-json
+3️⃣ Scan Waste QR:
 {
   "qr_code_data": "plastic"
 }
-4. Submit Waste
 
-json
+4️⃣ Submit Waste:
 {
   "user_id": "your-user-id",
   "waste_type": "Plastic",
   "weight": 2,
   "image_url": "https://example.com/image.jpg"
 }
-5. View Transactions
-No request body — just visit endpoint:
 
-text
+5️⃣ View Transactions:
 GET /api/transactions/{user_id}
-6. Redeem Reward
 
-json
+6️⃣ Redeem Reward:
 {
   "user_id": "your-user-id",
   "reward_id": "r1"
 }
-📌 Submission Info
-🔗 GitHub Repository:
-https://github.com/RB-projects-15/EcoPay-Team_Luffy
+</pre>
 
-📄 API Documentation:
-Open http://localhost:3000/api-docs after running the backend locally.
+---
+
+<h2>📌 Submission Info</h2>
+
+<p>🔗 <b>GitHub Repository:</b> <a href="https://github.com/RB-projects-15/EcoPay-Team_Luffy">EcoPay-Team_Luffy</a><br>
+📄 <b>API Documentation:</b> Open <code>http://localhost:3000/api-docs</code> after running the backend locally</p>
