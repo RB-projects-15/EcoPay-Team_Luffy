@@ -1,0 +1,14 @@
+{
+  "name": "ecopay-team_luffy",
+  "version": "1.0.0",
+  "description": "EcoPay is a sustainability-driven web platform that allows users to deposit recyclable materials like plastic bottles and paper in exchange for wallet credits. These credits can be used at eco-friendly partner stores, promoting both recycling and conscious consumerism.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
