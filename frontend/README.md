@@ -47,5 +47,5 @@ npm run dev
 
 #Access the Application
 Open your browser and go to:
-http://localhost:5176/
+http://localhost:5176
 
