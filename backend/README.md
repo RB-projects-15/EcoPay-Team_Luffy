@@ -68,14 +68,14 @@ $ npm start
 <pre>
 1️⃣ Register a User:
 {
-  "name": "Rohan Kumar",
-  "email": "rohan@example.com",
+  "name": "Test",
+  "email": "test@example.com",
   "password": "123456"
 }
 
 2️⃣ Login:
 {
-  "email": "rohan@example.com",
+  "email": "test@example.com",
   "password": "123456"
 }
 
