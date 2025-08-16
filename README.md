@@ -9,6 +9,6 @@ EcoPay is a sustainability-driven web platform that allows users to deposit recy
 - [Ashwin Pawar](https://github.com/AshwinPawar0)
 
 <b>Tech stack</b>
-- Frontend: TBD
-- Backend: TBD
+- Frontend: React.js (with Tailwind CSS for styling, Framer Motion for animations)  
+- Backend: Node.js (Express.js)
 - Database: TBD
