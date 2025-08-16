@@ -1,8 +1,9 @@
 <h1 align="center">🌱 EcoPay - Backend API </h1>
 
 <p align="center">
-  <b>Backend implementation for EcoPay</b>, built according to the API contract.<br>
-  Uses <b>Node.js (Express.js)</b> with in-memory data storage (no database required for now) and includes <b>Swagger interactive documentation</b>.
+  <b>Backend implementation for EcoPay</b>, built with <b>Node.js (Express.js)</b>.<br>
+  Provides APIs for authentication, waste pickup requests, transactions, and rewards.<br>
+  Includes <b>Swagger interactive documentation</b>.
 </p>
 
 ---
@@ -30,15 +31,39 @@ $ npm start
 <h2>📡 API Endpoints</h2>
 
 <ul>
-  <li>🔑 <b>Authentication:</b> POST /api/auth/register → Register a new user | POST /api/auth/login → Login & get JWT token</li>
-  <li>♻ <b>Waste Management:</b> POST /api/waste/scan → Scan waste QR code | POST /api/waste/upload → Upload waste image | POST /api/waste/submit → Submit waste entry & earn points</li>
-  <li>💳 <b>Transactions:</b> GET /api/transactions/{user_id} → Get user transaction history</li>
-  <li>🎁 <b>Rewards:</b> POST /api/rewards/redeem → Redeem reward using points</li>
+  <li>🔑 <b>Authentication:</b> 
+    <ul>
+      <li>POST <code>/api/auth/register</code> → Register a new user</li>
+      <li>POST <code>/api/auth/login</code> → Login & get JWT token</li>
+    </ul>
+  </li>
+
+  <li>♻ <b>Waste Management:</b> 
+    <ul>
+      <li>POST <code>/api/waste/upload</code> → Upload waste image (returns type, points, image URL)</li>
+      <li>POST <code>/api/waste/submit</code> → Submit a waste pickup request</li>
+      <li>GET <code>/api/waste/requests</code> → Get all pickup requests (Admin)</li>
+      <li>POST <code>/api/waste/requests/{id}/approve</code> → Approve a pickup request (Admin)</li>
+      <li>POST <code>/api/waste/requests/{id}/complete</code> → Mark a request as completed & award points</li>
+    </ul>
+  </li>
+
+  <li>💳 <b>Transactions:</b> 
+    <ul>
+      <li>GET <code>/api/transactions/{user_id}</code> → Get transaction history for a user</li>
+    </ul>
+  </li>
+
+  <li>🎁 <b>Rewards:</b> 
+    <ul>
+      <li>POST <code>/api/rewards/redeem</code> → Redeem reward using points</li>
+    </ul>
+  </li>
 </ul>
 
 ---
 
-<h2>🧪 Testing Flow in Swagger UI</h2>
+<h2>🧪 Example Testing Flow in Swagger UI</h2>
 
 <pre>
 1️⃣ Register a User:
@@ -54,23 +79,28 @@ $ npm start
   "password": "123456"
 }
 
-3️⃣ Scan Waste QR:
-{
-  "qr_code_data": "plastic"
-}
-
-4️⃣ Submit Waste:
+3️⃣ Submit Waste Pickup Request:
 {
   "user_id": "your-user-id",
   "waste_type": "Plastic",
   "weight": 2,
-  "image_url": "https://example.com/image.jpg"
+  "image_url": "https://example.com/image.jpg",
+  "location": "Delhi, India"
 }
 
-5️⃣ View Transactions:
+4️⃣ Admin Approves Request:
+POST /api/waste/requests/{id}/approve
+{
+  "collector_info": "Collector A assigned"
+}
+
+5️⃣ Mark Request as Completed:
+POST /api/waste/requests/{id}/complete
+
+6️⃣ View Transactions:
 GET /api/transactions/{user_id}
 
-6️⃣ Redeem Reward:
+7️⃣ Redeem Reward:
 {
   "user_id": "your-user-id",
   "reward_id": "r1"
