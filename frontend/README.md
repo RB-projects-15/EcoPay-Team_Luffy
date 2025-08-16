@@ -34,10 +34,18 @@ Clone the repository and install dependencies:
 
 ```bash
 # Clone repo
-git clone https://github.com/your-username/ecopay-frontend.git
+git clone https://github.com/RB-projects-15/EcoPay-Team_Luffy.git
 
-# Go into project folder
-cd ecopay-frontend
+# Go into frontend folder
+cd EcoPay-Team_Luffy/frontend
 
 # Install dependencies
 npm install
+
+#Start the Development Server
+npm run dev
+
+#Access the Application
+Open your browser and go to:
+http://localhost:5176/
+
