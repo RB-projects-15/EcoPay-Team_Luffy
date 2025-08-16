@@ -12,7 +12,6 @@ This repository contains the **frontend (React + TailwindCSS)** part of the proj
 - 🏠 **Home Page** – Colorful cards, waste categories, and point system.  
 - ♻️ **Waste Submission** – Upload images, select waste type, quantity, and location.  
 - 📍 **Map Integration** – Select pickup location on Google Maps.  
-- 🏅 **Points & Rewards** – Earn points for recycling and redeem rewards.  
 - 📱 **Responsive UI** – Works across desktop, tablet, and mobile.  
 
 ---
