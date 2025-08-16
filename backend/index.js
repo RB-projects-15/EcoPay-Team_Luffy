@@ -1,10 +1,5 @@
 /**
- * EcoPay - Simple in-memory backend for Assignment 4
- * Run:
- *   npm install
- *   npm start
- *
- * API docs: http://localhost:3000/api-docs
+ * EcoPay - Backend with Waste Pickup Request Flow
  */
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -32,8 +27,9 @@ const rewards = [
   { id: "r1", name: "Reusable Bag", cost: 100 },
   { id: "r2", name: "Coffee Mug", cost: 250 },
 ];
+const wasteRequests = []; // NEW
 
-// Helper
+// Helpers
 function findUserByEmail(email) {
   return users.find((u) => u.email.toLowerCase() === email.toLowerCase());
 }
@@ -53,7 +49,7 @@ function authMiddleware(req, res, next) {
   }
 }
 
-// 1. Register
+// Register
 app.post("/api/auth/register", async (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password)
@@ -66,7 +62,7 @@ app.post("/api/auth/register", async (req, res) => {
   res.json({ message: "User registered successfully", user_id: user.id });
 });
 
-// 2. Login
+// Login
 app.post("/api/auth/login", async (req, res) => {
   const { email, password } = req.body;
   const user = findUserByEmail(email);
@@ -79,65 +75,96 @@ app.post("/api/auth/login", async (req, res) => {
   res.json({ token, user_id: user.id });
 });
 
-// 3. Scan Waste QR
-app.post("/api/waste/scan", (req, res) => {
-  const { qr_code_data } = req.body;
-  if (!qr_code_data) return res.status(400).json({ error: "Invalid QR code" });
-  const map = {
-    plastic: "Plastic",
-    paper: "Paper",
-    glass: "Glass",
-    organic: "Organic",
-  };
-  const key = qr_code_data.toLowerCase();
-  if (!map[key]) return res.status(400).json({ error: "Invalid QR code" });
-  const points = { Plastic: 10, Paper: 5, Glass: 8, Organic: 2 }[map[key]] || 1;
-  res.json({ waste_type: map[key], points });
-});
-
-// 4. Upload Waste Image (simulated)
+// Upload Waste Image
 app.post("/api/waste/upload", upload.single("file"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "Invalid image format" });
-  const waste_type = "Plastic";
+  const waste_type = "Plastic"; // For now, static
   const points = 10;
-  res.json({ waste_type, points });
+  res.json({ waste_type, points, image_url: `/uploads/${req.file.filename}` });
 });
 
-// 5. Submit Waste
+// Submit Waste Pickup Request
 app.post("/api/waste/submit", (req, res) => {
-  const { user_id, waste_type, weight, image_url } = req.body;
-  if (!user_id || !waste_type || typeof weight !== "number") {
+  const { user_id, waste_type, weight, image_url, location } = req.body;
+
+  if (!user_id || !waste_type || typeof weight !== "number" || !location) {
     return res.status(400).json({ error: "Invalid waste data" });
   }
+
   const user = users.find((u) => u.id === user_id);
   if (!user) return res.status(400).json({ error: "User not found" });
-  const factor =
-    { Plastic: 10, Paper: 5, Glass: 8, Organic: 2 }[waste_type] || 1;
-  const points_awarded = Math.round(weight * factor);
-  const submission = {
+
+  const request = {
     id: uuidv4(),
     user_id,
+    user_name: user.name,
     waste_type,
     weight,
     image_url: image_url || null,
-    points_awarded,
+    location,
+    status: "pending",
+    collector_info: null,
     submitted_at: new Date().toISOString(),
   };
-  wastes.push(submission);
-  user.points += points_awarded;
-  const tx = {
-    id: uuidv4(),
-    user_id,
-    type: "credit",
-    points: points_awarded,
-    date: new Date().toISOString(),
-    description: `Waste submission (${waste_type})`,
-  };
-  transactions.push(tx);
-  res.json({ message: "Waste submitted successfully", points_awarded });
+
+  wasteRequests.push(request);
+
+  res.json({
+    message: "Waste pickup request submitted",
+    request_id: request.id,
+  });
 });
 
-// 6. Get User Transactions
+// Get all waste pickup requests (Admin)
+app.get("/api/waste/requests", (req, res) => {
+  res.json(wasteRequests);
+});
+
+// Approve request (Admin)
+app.post("/api/waste/requests/:id/approve", (req, res) => {
+  const { id } = req.params;
+  const { collector_info } = req.body;
+
+  const request = wasteRequests.find((r) => r.id === id);
+  if (!request) return res.status(404).json({ error: "Request not found" });
+
+  request.status = "approved";
+  request.collector_info = collector_info || "Collector assigned";
+
+  res.json({ message: "Request approved", request });
+});
+
+// Complete request (Collector/Admin)
+app.post("/api/waste/requests/:id/complete", (req, res) => {
+  const { id } = req.params;
+
+  const request = wasteRequests.find((r) => r.id === id);
+  if (!request) return res.status(404).json({ error: "Request not found" });
+
+  request.status = "completed";
+
+  const user = users.find((u) => u.id === request.user_id);
+  if (user) {
+    const factor =
+      { Plastic: 10, Paper: 5, Glass: 8, Organic: 2 }[request.waste_type] || 1;
+    const points_awarded = Math.round(request.weight * factor);
+    user.points += points_awarded;
+
+    const tx = {
+      id: uuidv4(),
+      user_id: user.id,
+      type: "credit",
+      points: points_awarded,
+      date: new Date().toISOString(),
+      description: `Waste submission (${request.waste_type})`,
+    };
+    transactions.push(tx);
+  }
+
+  res.json({ message: "Request completed and points awarded", request });
+});
+
+// Get user transactions
 app.get("/api/transactions/:user_id", (req, res) => {
   const user_id = req.params.user_id;
   const user = users.find((u) => u.id === user_id);
@@ -146,7 +173,7 @@ app.get("/api/transactions/:user_id", (req, res) => {
   res.json(userTx);
 });
 
-// 7. Redeem Rewards
+// Redeem reward
 app.post("/api/rewards/redeem", (req, res) => {
   const { user_id, reward_id } = req.body;
   const user = users.find((u) => u.id === user_id);

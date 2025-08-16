@@ -1,0 +1,72 @@
+/* Tailwind import */
+@import "tailwindcss";
+
+/* Global typography styles */
+@layer base {
+  /* Headings (H1, H3, H4, H5, H6) */
+  h1, h3, h4, h5, h6 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 36px;
+  }
+
+  /* Subheadings (H2) */
+  h2 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 400;
+    font-size: 24px;
+  }
+
+  /* Body text */
+  body {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 16px;
+    background-color: #f9fafb; /* Tailwind's gray-50 */
+    color: #1f2937; /* Tailwind's gray-800 */
+  }
+
+  /* Labels / Callouts */
+  small, .label {
+    font-family: 'Raleway', sans-serif;
+    font-weight: 200;
+    font-size: 14px;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes gradientBG {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 1s ease-in-out forwards;
+}
+
+.animate-scaleUp {
+  animation: scaleUp 1s ease-out forwards;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradientBG 6s ease infinite;
+}
+
+.delay-200 {
+  animation-delay: 0.2s;
+}
+
+.delay-400 {
+  animation-delay: 0.4s;
+}

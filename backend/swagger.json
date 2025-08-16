@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "EcoPay API (Assignment 4)",
-    "version": "1.0.0",
-    "description": "Interactive docs for the in-memory EcoPay backend"
+    "title": "EcoPay API",
+    "version": "1.2.0",
+    "description": "API for EcoPay waste pickup request workflow with admin approval and completion"
   },
   "servers": [
     { "url": "http://localhost:3000" }
@@ -11,7 +11,7 @@
   "paths": {
     "/api/auth/register": {
       "post": {
-        "summary": "Register a user",
+        "summary": "Register a new user",
         "requestBody": {
           "required": true,
           "content": {
@@ -22,17 +22,20 @@
                   "name": { "type": "string" },
                   "email": { "type": "string" },
                   "password": { "type": "string" }
-                }
+                },
+                "required": ["name", "email", "password"]
               }
             }
           }
         },
-        "responses": { "200": { "description": "OK" } }
+        "responses": {
+          "200": { "description": "User registered successfully" }
+        }
       }
     },
     "/api/auth/login": {
       "post": {
-        "summary": "Login",
+        "summary": "Login user",
         "requestBody": {
           "required": true,
           "content": {
@@ -42,34 +45,21 @@
                 "properties": {
                   "email": { "type": "string" },
                   "password": { "type": "string" }
-                }
+                },
+                "required": ["email", "password"]
               }
             }
           }
         },
-        "responses": { "200": { "description": "OK" } }
-      }
-    },
-    "/api/waste/scan": {
-      "post": {
-        "summary": "Scan waste QR",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": { "qr_code_data": { "type": "string" } }
-              }
-            }
-          }
-        },
-        "responses": { "200": { "description": "OK" } }
+        "responses": {
+          "200": { "description": "Login successful" }
+        }
       }
     },
     "/api/waste/upload": {
       "post": {
         "summary": "Upload waste image",
+        "description": "Uploads an image of waste and returns type, points, and image URL",
         "requestBody": {
           "required": true,
           "content": {
@@ -78,17 +68,21 @@
                 "type": "object",
                 "properties": {
                   "file": { "type": "string", "format": "binary" }
-                }
+                },
+                "required": ["file"]
               }
             }
           }
         },
-        "responses": { "200": { "description": "OK" } }
+        "responses": {
+          "200": { "description": "Waste image uploaded successfully" }
+        }
       }
     },
     "/api/waste/submit": {
       "post": {
-        "summary": "Submit waste",
+        "summary": "Submit waste pickup request",
+        "description": "Creates a pickup request for admin review",
         "requestBody": {
           "required": true,
           "content": {
@@ -99,13 +93,70 @@
                   "user_id": { "type": "string" },
                   "waste_type": { "type": "string" },
                   "weight": { "type": "number" },
-                  "image_url": { "type": "string" }
+                  "image_url": { "type": "string" },
+                  "location": { "type": "string" }
+                },
+                "required": ["user_id", "waste_type", "weight", "location"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Waste pickup request submitted" }
+        }
+      }
+    },
+    "/api/waste/requests": {
+      "get": {
+        "summary": "Get all waste pickup requests (Admin)",
+        "responses": {
+          "200": { "description": "List of all pickup requests" }
+        }
+      }
+    },
+    "/api/waste/requests/{id}/approve": {
+      "post": {
+        "summary": "Approve a waste pickup request",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "collector_info": { "type": "string" }
                 }
               }
             }
           }
         },
-        "responses": { "200": { "description": "OK" } }
+        "responses": {
+          "200": { "description": "Request approved successfully" }
+        }
+      }
+    },
+    "/api/waste/requests/{id}/complete": {
+      "post": {
+        "summary": "Complete a waste pickup request",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Request marked as completed and points awarded" }
+        }
       }
     },
     "/api/transactions/{user_id}": {
@@ -119,12 +170,14 @@
             "schema": { "type": "string" }
           }
         ],
-        "responses": { "200": { "description": "OK" } }
+        "responses": {
+          "200": { "description": "List of user transactions" }
+        }
       }
     },
     "/api/rewards/redeem": {
       "post": {
-        "summary": "Redeem reward",
+        "summary": "Redeem a reward",
         "requestBody": {
           "required": true,
           "content": {
@@ -134,12 +187,15 @@
                 "properties": {
                   "user_id": { "type": "string" },
                   "reward_id": { "type": "string" }
-                }
+                },
+                "required": ["user_id", "reward_id"]
               }
             }
           }
         },
-        "responses": { "200": { "description": "OK" } }
+        "responses": {
+          "200": { "description": "Reward redeemed successfully" }
+        }
       }
     }
   }
