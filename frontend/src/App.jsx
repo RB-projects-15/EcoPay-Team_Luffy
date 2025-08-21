@@ -9,15 +9,13 @@ import Navbar from "./components/Navbar";
 import Splash from "./pages/Splash";
 import Onboarding from "./pages/Onboarding";
 import Home from "./pages/Home";
-import Transactions from "./pages/Transactions";
-import Dashboard from "./pages/Dashboard";
-import Deposit from "./pages/Deposit";
+import MyTransactions from "./pages/MyTransactions";
+import MyRequests from "./pages/MyRequests";
+
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Store from "./pages/Store";
 import LocationSelect from "./pages/LocationSelect";
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminRequests from "./pages/AdminRequests";
 import WasteSubmit from "./pages/WasteSubmit";
 
 function Layout({ children }) {
@@ -47,13 +45,11 @@ export default function App() {
 
           {/* With Navbar */}
           <Route path="/home" element={<Home />} />
-          <Route path="/transactions" element={<Transactions />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/deposit" element={<Deposit />} />
+          <Route path="/transactions" element={<MyTransactions />} />
+          <Route path="/my-requests" element={<MyRequests />} />
+
           <Route path="/store" element={<Store />} />
           <Route path="/location" element={<LocationSelect />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/requests" element={<AdminRequests />} />
           <Route path="/waste-submit" element={<WasteSubmit />} />
         </Routes>
       </Layout>

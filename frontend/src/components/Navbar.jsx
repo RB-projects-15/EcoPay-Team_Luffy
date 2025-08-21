@@ -22,6 +22,13 @@ export default function Navbar() {
 
   if (hideNavbar) return null;
 
+  const links = [
+    { name: "Home", path: "/home" },
+    { name: "My Requests", path: "/my-requests" },
+    { name: "My Transactions", path: "/transactions" },
+    { name: "Store", path: "/store" },
+  ];
+
   return (
     <>
       <nav className="bg-gradient-to-r from-green-500 via-green-600 to-green-500 p-5 flex justify-between items-center shadow-lg rounded-b-xl">
@@ -37,14 +44,7 @@ export default function Navbar() {
 
         {/* Links */}
         <div className="flex items-center space-x-8 text-white font-medium text-lg">
-          {[
-            { name: "Home", path: "/home" },
-            { name: "Transactions", path: "/transactions" },
-            { name: "Dashboard", path: "/dashboard" },
-            { name: "Deposit", path: "/deposit" },
-            { name: "Store", path: "/store" },
-            { name: "Admin", path: "/admin/requests" },
-          ].map((link, idx) => (
+          {links.map((link, idx) => (
             <Link
               key={idx}
               to={link.path}

@@ -1,3 +1,4 @@
+// backend/src/models/Transaction.js
 const mongoose = require("mongoose");
 
 const transactionSchema = new mongoose.Schema(
@@ -10,7 +11,6 @@ const transactionSchema = new mongoose.Schema(
     type: { type: String, enum: ["credit", "debit"], required: true },
     points: { type: Number, required: true },
     description: { type: String },
-    date: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );

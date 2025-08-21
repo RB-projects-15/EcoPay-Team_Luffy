@@ -2,16 +2,19 @@
   "openapi": "3.0.0",
   "info": {
     "title": "EcoPay API",
-    "version": "1.3.0",
-    "description": "API for EcoPay waste pickup request workflow with admin approval, completion, and reward system"
+    "version": "2.0.1",
+    "description": "API for EcoPay waste pickup workflow with user & admin roles"
   },
   "servers": [
-    { "url": "http://localhost:3000" }
+    {
+      "url": "http://localhost:5000"
+    }
   ],
   "paths": {
-    "/api/auth/register": {
+    "/api/user/register": {
       "post": {
         "summary": "Register a new user",
+        "tags": ["User"],
         "requestBody": {
           "required": true,
           "content": {
@@ -20,10 +23,16 @@
                 "type": "object",
                 "properties": {
                   "name": { "type": "string" },
-                  "email": { "type": "string" },
-                  "password": { "type": "string" }
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string" },
+                  "confirmPassword": { "type": "string" },
+                  "phone": {
+                    "type": "string",
+                    "pattern": "^\\+91[0-9]{10}$",
+                    "example": "+919876543210"
+                  }
                 },
-                "required": ["name", "email", "password"]
+                "required": ["name", "email", "password", "confirmPassword", "phone"]
               }
             }
           }
@@ -33,16 +42,20 @@
             "description": "User registered successfully",
             "content": {
               "application/json": {
-                "example": { "message": "User registered successfully", "user_id": "64fa9c1234abcd" }
+                "example": {
+                  "message": "User registered successfully",
+                  "user_id": "66c2e7b1b9a8f8e2d1234567"
+                }
               }
             }
           }
         }
       }
     },
-    "/api/auth/login": {
+    "/api/user/login": {
       "post": {
         "summary": "Login user",
+        "tags": ["User"],
         "requestBody": {
           "required": true,
           "content": {
@@ -50,7 +63,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "email": { "type": "string" },
+                  "email": { "type": "string", "format": "email" },
                   "password": { "type": "string" }
                 },
                 "required": ["email", "password"]
@@ -63,175 +76,85 @@
             "description": "Login successful",
             "content": {
               "application/json": {
-                "example": { "token": "jwt-token-here", "user_id": "64fa9c1234abcd" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/waste/upload": {
-  "post": {
-    "summary": "Upload waste image (PNG/JPG only)",
-    "requestBody": {
-      "required": true,
-      "content": {
-        "multipart/form-data": {
-          "schema": {
-            "type": "object",
-            "properties": {
-              "file": { "type": "string", "format": "binary" }
-            },
-            "required": ["file"]
-          }
-        }
-      }
-    },
-    "responses": {
-      "200": {
-        "description": "Image uploaded successfully",
-        "content": {
-          "application/json": {
-            "example": {
-              "image_url": "/uploads/sample.png"
-            }
-          }
-        }
-      }
-    }
-  }
-},
-
-
-   "/api/waste/submit": {
-  "post": {
-    "summary": "Submit waste pickup request",
-    "description": "Creates a pickup request for admin review",
-    "requestBody": {
-      "required": true,
-      "content": {
-        "application/json": {
-          "schema": {
-            "type": "object",
-            "properties": {
-              "user_id": { "type": "string" },
-              "waste_type": { "type": "string", "enum": ["Plastic", "Paper", "Glass", "Organic"] },
-              "weight": { "type": "number" },
-              "image_url": { "type": "string" },
-              "location": { "type": "string" },
-              "coords": {
-                "type": "object",
-                "properties": {
-                  "lat": { "type": "number" },
-                  "lng": { "type": "number" }
+                "example": {
+                  "token": "jwt-token",
+                  "user_id": "64fa9c1234abcd",
+                  "role": "user"
                 }
-              },
-              "contact": { "type": "string", "example": "+91 9876543210" },
-              "notes": { "type": "string", "example": "Leave package near the gate" }
-            },
-            "required": ["user_id", "waste_type", "weight", "location", "contact"]
-          }
-        }
-      }
-    },
-    "responses": {
-      "200": {
-        "description": "Waste pickup request submitted",
-        "content": {
-          "application/json": {
-            "example": {
-              "message": "Waste pickup request submitted",
-              "request_id": "64fa9c1234efgh"
-            }
-          }
-        }
-      }
-    }
-  }
-},
-
-    "/api/waste/requests": {
-      "get": {
-        "summary": "Get all waste pickup requests (Admin)",
-        "responses": {
-          "200": {
-            "description": "List of all pickup requests",
-            "content": {
-              "application/json": {
-                "example": [
-                  {
-                    "_id": "64fa9c1234efgh",
-                    "user_id": "64fa9c1234abcd",
-                    "user_name": "John Doe",
-                    "waste_type": "Plastic",
-                    "weight": 5,
-                    "location": "New Delhi",
-                    "status": "pending",
-                    "collector_info": null,
-                    "image_url": "/uploads/sample.png"
-                  }
-                ]
               }
             }
           }
         }
       }
     },
-    "/api/waste/requests/{id}/approve": {
+    "/api/user/waste/upload": {
       "post": {
-        "summary": "Approve a waste pickup request",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string" }
-          }
-        ],
+        "summary": "Upload waste image (PNG/JPG only)",
+        "tags": ["User"],
         "requestBody": {
-          "required": false,
+          "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
                 "type": "object",
                 "properties": {
-                  "collector_info": { "type": "string" }
-                }
+                  "file": { "type": "string", "format": "binary" }
+                },
+                "required": ["file"]
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Request approved successfully",
+            "description": "Image uploaded successfully",
             "content": {
               "application/json": {
-                "example": { "message": "Request approved", "request": { "_id": "64fa9c1234efgh", "status": "approved" } }
+                "example": { "image_url": "/uploads/sample.png" }
               }
             }
           }
         }
       }
     },
-    "/api/waste/requests/{id}/complete": {
+    "/api/user/waste/submit": {
       "post": {
-        "summary": "Complete a waste pickup request",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string" }
+        "summary": "Submit waste pickup request",
+        "tags": ["User"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user_id": { "type": "string" },
+                  "waste_type": {
+                    "type": "string",
+                    "enum": ["Plastic", "Paper", "Glass", "Organic"]
+                  },
+                  "weight": { "type": "number" },
+                  "image_url": { "type": "string" },
+                  "location": { "type": "string" },
+                  "phone": {
+                    "type": "string",
+                    "pattern": "^\\+91[0-9]{10}$",
+                    "example": "+919876543210"
+                  }
+                },
+                "required": ["user_id", "waste_type", "weight", "location", "phone"]
+              }
+            }
           }
-        ],
+        },
         "responses": {
           "200": {
-            "description": "Request marked as completed and points awarded",
+            "description": "Waste pickup request submitted",
             "content": {
               "application/json": {
                 "example": {
-                  "message": "Request completed and points awarded",
-                  "request": { "_id": "64fa9c1234efgh", "status": "completed" }
+                  "message": "Waste pickup request submitted",
+                  "request_id": "64fa9c1234efgh"
                 }
               }
             }
@@ -239,26 +162,54 @@
         }
       }
     },
-    "/api/transactions/{user_id}": {
+    "/api/user/waste/{id}": {
       "get": {
-        "summary": "Get user transactions",
+        "summary": "Get a specific waste pickup request (User)",
+        "tags": ["User"],
         "parameters": [
-          {
-            "name": "user_id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string" }
-          }
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
         ],
         "responses": {
           "200": {
-            "description": "List of user transactions",
+            "description": "Request details",
+            "content": {
+              "application/json": {
+                "example": {
+                  "_id": "66c2e7b1b9a8f8e2d1234567",
+                  "user_id": "66c2e7b1b9a8f8e2d6543210",
+                  "user_name": "Rohan",
+                  "waste_type": "Plastic",
+                  "weight": 5,
+                  "location": "Lovely building Baina, Vasco Goa",
+                  "phone": "+919876543210",
+                  "status": "pending",
+                  "collector_info": null,
+                  "image_url": "/uploads/test.png",
+                  "createdAt": "2025-08-16T18:05:00.123Z",
+                  "updatedAt": "2025-08-16T18:05:00.123Z"
+                }
+              }
+            }
+          },
+          "404": { "description": "Request not found" }
+        }
+      }
+    },
+    "/api/user/transactions/{user_id}": {
+      "get": {
+        "summary": "Get user transactions",
+        "tags": ["User"],
+        "parameters": [
+          { "name": "user_id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of transactions",
             "content": {
               "application/json": {
                 "example": [
                   {
                     "_id": "64fa9c9876tx",
-                    "user_id": "64fa9c1234abcd",
                     "type": "credit",
                     "points": 50,
                     "description": "Waste submission (Plastic)"
@@ -270,9 +221,10 @@
         }
       }
     },
-    "/api/rewards/redeem": {
+    "/api/user/rewards/redeem": {
       "post": {
         "summary": "Redeem a reward",
+        "tags": ["User"],
         "requestBody": {
           "required": true,
           "content": {
@@ -294,6 +246,142 @@
             "content": {
               "application/json": {
                 "example": { "message": "Reward redeemed successfully" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/user/all": {
+      "get": {
+        "summary": "Get all users (Admin only)",
+        "tags": ["Admin"],
+        "responses": {
+          "200": {
+            "description": "List of all users",
+            "content": {
+              "application/json": {
+                "example": [
+                  {
+                    "_id": "66c2e7b1b9a8f8e2d1234567",
+                    "name": "Rohan",
+                    "email": "rohan@example.com",
+                    "phone": "+919876543210",
+                    "points": 120
+                  },
+                  {
+                    "_id": "66c2e7b1b9a8f8e2d9876543",
+                    "name": "Aditi",
+                    "email": "aditi@example.com",
+                    "phone": "+919123456789",
+                    "points": 250
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/requests": {
+      "get": {
+        "summary": "Get all waste pickup requests",
+        "tags": ["Admin"],
+        "responses": {
+          "200": {
+            "description": "List of all pickup requests",
+            "content": {
+              "application/json": {
+                "example": [
+                  {
+                    "_id": "64fa9c1234efgh",
+                    "user_name": "Rohan",
+                    "phone": "+919876543210",
+                    "waste_type": "Plastic",
+                    "status": "pending"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/requests/{id}/approve": {
+      "post": {
+        "summary": "Approve a waste pickup request (set status = approved)",
+        "tags": ["Admin"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Request ID to approve (must be in pending status)"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "collector_info": {
+                    "type": "string",
+                    "example": "Collector Ram - +919876543210"
+                  }
+                },
+                "required": ["collector_info"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Request approved successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Request approved",
+                  "request": {
+                    "_id": "66c2e7b1b9a8f8e2d1234567",
+                    "status": "approved",
+                    "collector_info": "Collector Ram - +919876543210"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/requests/{id}/complete": {
+      "post": {
+        "summary": "Complete a waste pickup request (set status = completed and award points)",
+        "tags": ["Admin"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Request ID to complete (must be approved first)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed and points awarded",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Request completed and points awarded",
+                  "request": {
+                    "_id": "66c2e7b1b9a8f8e2d1234567",
+                    "status": "completed",
+                    "points_awarded": 50
+                  }
+                }
               }
             }
           }

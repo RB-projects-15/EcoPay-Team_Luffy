@@ -5,7 +5,13 @@ import logo from "../assets/logo.png";
 
 export default function Register() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+  });
   const [error, setError] = useState("");
 
   const handleChange = (e) => {
@@ -16,8 +22,20 @@ export default function Register() {
     e.preventDefault();
     setError("");
 
+    // validate phone
+    const phoneRegex = /^\+91[0-9]{10}$/;
+    if (!phoneRegex.test(form.phone)) {
+      setError("Phone must be in format +91XXXXXXXXXX (10 digits)");
+      return;
+    }
+
+    if (form.password !== form.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
     try {
-      const res = await fetch("http://localhost:3000/api/auth/register", {
+      const res = await fetch("http://localhost:5000/api/user/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -30,14 +48,14 @@ export default function Register() {
         return;
       }
 
-      // Save token & user info to localStorage
-      localStorage.setItem("token", data.token);
+      // Save minimal user info
       localStorage.setItem(
         "user",
         JSON.stringify({
           user_id: data.user_id,
           email: form.email,
           name: form.name,
+          phone: form.phone,
           points: 0,
         })
       );
@@ -54,7 +72,7 @@ export default function Register() {
       <img
         src={logo}
         alt="EcoPay Logo"
-        className="w-48 h-48 object-contain mb-6"
+        className="w-40 h-40 object-contain mb-6"
       />
 
       {/* Card */}
@@ -89,10 +107,30 @@ export default function Register() {
           />
 
           <input
+            type="text"
+            name="phone"
+            placeholder="Phone (+91XXXXXXXXXX)"
+            value={form.phone}
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 text-lg"
+          />
+
+          <input
             type="password"
             name="password"
             placeholder="Password"
             value={form.password}
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 text-lg"
+          />
+
+          <input
+            type="password"
+            name="confirmPassword"
+            placeholder="Confirm Password"
+            value={form.confirmPassword}
             onChange={handleChange}
             required
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 text-lg"

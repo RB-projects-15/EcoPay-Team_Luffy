@@ -1,0 +1,36 @@
+/* Tailwind import */
+@import "tailwindcss";
+
+/* Global typography styles */
+@layer base {
+  /* Headings (H1, H3, H4, H5, H6) */
+  h1, h3, h4, h5, h6 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 36px;
+  }
+
+  /* Subheadings (H2) */
+  h2 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 400;
+    font-size: 24px;
+  }
+
+  /* Body text */
+  body {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 16px;
+    background-color: #f9fafb; /* Tailwind's gray-50 */
+    color: #1f2937; /* Tailwind's gray-800 */
+  }
+
+  /* Labels / Callouts */
+  small, .label {
+    font-family: 'Raleway', sans-serif;
+    font-weight: 200;
+    font-size: 14px;
+  }
+}
+
+/* Animations */

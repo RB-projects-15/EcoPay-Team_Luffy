@@ -1,5 +1,5 @@
 // src/pages/WasteSubmit.jsx
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   FaCamera,
   FaTrash,
@@ -22,7 +22,7 @@ export default function WasteSubmit() {
   const [fileName, setFileName] = useState("");
   const [wasteType, setWasteType] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [location, setLocation] = useState(""); // manual input
+  const [location, setLocation] = useState("");
   const [coords, setCoords] = useState({ lat: 20.5937, lng: 78.9629 });
   const [placeName, setPlaceName] = useState("");
   const [notes, setNotes] = useState("");
@@ -31,18 +31,28 @@ export default function WasteSubmit() {
   const [message, setMessage] = useState("");
 
   const navigate = useNavigate();
+  const autoRef = useRef(null);
 
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: "AIzaSyAVbbjlGDA0A6Xz8ivT3qNXEWPZirCJmJY",
-    libraries: ["places"], // needed for autocomplete
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY, // ✅ safer
+    libraries: ["places"],
   });
+
+  const resetForm = () => {
+    setFile(null);
+    setPreviewURL(null);
+    setFileName("");
+    setWasteType("");
+    setQuantity("");
+    setLocation("");
+    setPlaceName("");
+    setNotes("");
+    setPhone("");
+  };
 
   const handleFileChange = (e) => {
     const selected = e.target.files[0];
-    if (
-      selected &&
-      (selected.type === "image/png" || selected.type === "image/jpeg")
-    ) {
+    if (selected && ["image/png", "image/jpeg"].includes(selected.type)) {
       setFile(selected);
       setPreviewURL(URL.createObjectURL(selected));
       setFileName(selected.name);
@@ -51,12 +61,13 @@ export default function WasteSubmit() {
       setFile(null);
       setPreviewURL(null);
       setFileName("");
-      setMessage("⚠️ Image should only be in PNG or JPG format");
+      setMessage("⚠️ Please upload only PNG or JPG images");
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (
       !file ||
       !wasteType ||
@@ -64,7 +75,12 @@ export default function WasteSubmit() {
       (!location && !placeName) ||
       !phone
     ) {
-      setMessage("⚠️ Please fill all fields");
+      setMessage("⚠️ Please fill in all required fields");
+      return;
+    }
+
+    if (!/^\d{7,15}$/.test(phone)) {
+      setMessage("⚠️ Please enter a valid phone number (7–15 digits)");
       return;
     }
 
@@ -101,15 +117,7 @@ export default function WasteSubmit() {
       if (!res.ok) throw new Error(data.error || "Submission failed");
 
       setMessage("✅ Waste request submitted successfully");
-      setFile(null);
-      setPreviewURL(null);
-      setFileName("");
-      setWasteType("");
-      setQuantity("");
-      setLocation("");
-      setPlaceName("");
-      setNotes("");
-      setPhone("");
+      resetForm();
     } catch (err) {
       setMessage(`❌ ${err.message}`);
     }
@@ -122,23 +130,24 @@ export default function WasteSubmit() {
 
     try {
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=AIzaSyAVbbjlGDA0A6Xz8ivT3qNXEWPZirCJmJY`
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${
+          import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+        }`
       );
       const data = await response.json();
-      if (data.results && data.results[0]) {
+      if (data.results?.[0]) {
         setPlaceName(data.results[0].formatted_address);
       } else {
         setPlaceName(`Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`);
       }
-    } catch (err) {
-      console.error("Geocoding error:", err);
+    } catch {
       setPlaceName(`Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`);
     }
   };
 
-  const handlePlaceSelect = (autocomplete) => {
-    const place = autocomplete.getPlace();
-    if (place.geometry) {
+  const handlePlaceSelect = () => {
+    const place = autoRef.current.getPlace();
+    if (place?.geometry) {
       const lat = place.geometry.location.lat();
       const lng = place.geometry.location.lng();
       setCoords({ lat, lng });
@@ -164,7 +173,7 @@ export default function WasteSubmit() {
         {message && (
           <p
             className={`p-2 rounded mb-3 text-center font-medium ${
-              message.includes("✅")
+              message.startsWith("✅")
                 ? "bg-green-100 text-green-700"
                 : "bg-red-100 text-red-700"
             }`}
@@ -256,7 +265,7 @@ export default function WasteSubmit() {
               <input
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
                 className="w-full border border-gray-300 rounded-r-lg p-2 text-base focus:outline-none focus:ring-2 focus:ring-green-400"
                 placeholder="Enter phone number"
               />
@@ -271,8 +280,8 @@ export default function WasteSubmit() {
             </label>
             {isLoaded && (
               <Autocomplete
-                onLoad={(auto) => (window.auto = auto)}
-                onPlaceChanged={() => handlePlaceSelect(window.auto)}
+                onLoad={(auto) => (autoRef.current = auto)}
+                onPlaceChanged={handlePlaceSelect}
               >
                 <input
                   type="text"

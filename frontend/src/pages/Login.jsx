@@ -17,7 +17,7 @@ export default function Login() {
     setError("");
 
     try {
-      const res = await fetch("http://localhost:3000/api/auth/login", {
+      const res = await fetch("http://localhost:5000/api/user/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -37,12 +37,16 @@ export default function Login() {
         JSON.stringify({
           user_id: data.user_id,
           email: form.email,
-          name: form.email.split("@")[0],
-          points: 0,
+          role: data.role, // <-- NEW (admin/user)
         })
       );
 
-      navigate("/home");
+      // redirect based on role
+      if (data.role === "admin") {
+        navigate("/admin"); // admin dashboard
+      } else {
+        navigate("/home"); // user home
+      }
     } catch (err) {
       setError("Server error. Please try again.");
     }
@@ -54,7 +58,7 @@ export default function Login() {
       <img
         src={logo}
         alt="EcoPay Logo"
-        className="w-48 h-48 object-contain mb-6"
+        className="w-40 h-40 object-contain mb-6"
       />
 
       {/* Card */}
