@@ -1,22 +1,32 @@
-// src/pages/ManageUsers.jsx
+// admin-frontend/src/pages/ManageUsers.jsx
 import { useEffect, useState } from "react";
 import { fetchUsers } from "../services/adminApi";
 
 export default function ManageUsers() {
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadUsers();
   }, []);
 
   const loadUsers = async () => {
-    const data = await fetchUsers();
-    setUsers(data);
+    setLoading(true);
+    try {
+      const data = await fetchUsers();
+      setUsers(data || []);
+    } catch (err) {
+      console.error("Failed to load users:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">👥 Manage Users</h1>
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <h1 className="text-3xl font-bold text-green-700 mb-6">
+        👥 Manage Users
+      </h1>
 
       <div className="overflow-x-auto bg-white shadow-md rounded-lg">
         <table className="min-w-full border-collapse">
@@ -37,7 +47,16 @@ export default function ManageUsers() {
             </tr>
           </thead>
           <tbody>
-            {users.length > 0 ? (
+            {loading ? (
+              <tr>
+                <td
+                  colSpan="4"
+                  className="text-center py-6 text-gray-500 font-medium"
+                >
+                  Loading users...
+                </td>
+              </tr>
+            ) : users.length > 0 ? (
               users.map((user, idx) => (
                 <tr
                   key={user._id}

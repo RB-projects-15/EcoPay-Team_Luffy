@@ -1,9 +1,21 @@
-// src/services/adminApi.js
 import axios from "axios";
 
+// ✅ Create axios instance with base URL and dynamic Authorization header
 const API = axios.create({
   baseURL: "http://localhost:5000/api/admin",
 });
+
+// ✅ Interceptor to include token dynamically
+API.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("adminToken");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 // ---- Requests APIs ----
 export const fetchRequests = async () => {
@@ -36,8 +48,7 @@ export const fetchRequestStats = async () => {
 
 // ---- Users (Manage Users page) ----
 export const fetchUsers = async () => {
-  // ⚠️ You need a backend route for this: /api/user/all
-  const res = await axios.get("http://localhost:5000/api/user/all");
+  const res = await API.get("/users"); // backend route: /api/admin/users
   return res.data;
 };
 
@@ -45,4 +56,10 @@ export const fetchUsers = async () => {
 export const fetchReports = async () => {
   const res = await API.get("/requests");
   return res.data;
+};
+
+// ---- Logout ----
+export const logoutAdmin = () => {
+  localStorage.removeItem("adminToken");
+  window.location.href = "/admin/login"; // ✅ redirect to admin login
 };

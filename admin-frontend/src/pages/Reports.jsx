@@ -1,4 +1,4 @@
-// src/pages/Reports.jsx
+// admin-frontend/src/pages/Reports.jsx
 import { useEffect, useState } from "react";
 import { fetchReports } from "../services/adminApi";
 import {
@@ -41,8 +41,8 @@ export default function Reports() {
   }, []);
 
   return (
-    <div className="flex flex-col gap-6">
-      <h2 className="text-3xl font-bold mb-4 text-gray-800">Reports</h2>
+    <div className="flex flex-col gap-6 p-6 bg-gray-50 min-h-screen">
+      <h2 className="text-3xl font-bold mb-4 text-green-700">Reports</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Bar Chart */}
         <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition-shadow duration-300">

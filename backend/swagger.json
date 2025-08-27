@@ -2,391 +2,1106 @@
   "openapi": "3.0.0",
   "info": {
     "title": "EcoPay API",
-    "version": "2.0.1",
-    "description": "API for EcoPay waste pickup workflow with user & admin roles"
+    "version": "2.1.1",
+    "description": "Simplified API documentation for EcoPay waste pickup workflow with user & admin roles"
   },
   "servers": [
-    {
-      "url": "http://localhost:5000"
-    }
+    { "url": "http://localhost:5000" }
   ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your JWT token in the format: Bearer <token>"
+      }
+    }
+  },
   "paths": {
-    "/api/user/register": {
-      "post": {
-        "summary": "Register a new user",
-        "tags": ["User"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "name": { "type": "string" },
-                  "email": { "type": "string", "format": "email" },
-                  "password": { "type": "string" },
-                  "confirmPassword": { "type": "string" },
-                  "phone": {
-                    "type": "string",
-                    "pattern": "^\\+91[0-9]{10}$",
-                    "example": "+919876543210"
-                  }
-                },
-                "required": ["name", "email", "password", "confirmPassword", "phone"]
+"/api/user/register": {
+  "post": {
+    "summary": "Register a new user",
+    "tags": ["User"],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "example": "Riya" },
+              "email": { "type": "string", "format": "email", "example": "riya@example.com" },
+              "phone": { "type": "string", "example": "9876543210" },
+              "password": { "type": "string", "example": "password123" },
+              "confirmPassword": { "type": "string", "example": "password123" }
+            },
+            "required": ["name", "email", "phone", "password", "confirmPassword"]
+          }
+        }
+      }
+    },
+    "responses": {
+      "201": {
+        "description": "User registered successfully",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": true,
+              "message": "User registered successfully",
+              "user": {
+                "_id": "64a7b92f8e8c1d001f9b1e45",
+                "name": "Riya",
+                "email": "riya@example.com",
+                "phone": "9876543210"
               }
             }
           }
-        },
-        "responses": {
-          "200": {
-            "description": "User registered successfully",
-            "content": {
-              "application/json": {
-                "example": {
-                  "message": "User registered successfully",
-                  "user_id": "66c2e7b1b9a8f8e2d1234567"
+        }
+      },
+      "400": {
+        "description": "Validation error or password mismatch",
+        "content": {
+          "application/json": {
+            "examples": {
+              "MissingField": {
+                "summary": "Required field missing",
+                "value": {
+                  "success": false,
+                  "message": "Phone is required"
+                }
+              },
+              "PasswordMismatch": {
+                "summary": "Passwords do not match",
+                "value": {
+                  "success": false,
+                  "message": "Password and confirmPassword do not match"
                 }
               }
             }
           }
         }
-      }
-    },
-    "/api/user/login": {
-      "post": {
-        "summary": "Login user",
-        "tags": ["User"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "email": { "type": "string", "format": "email" },
-                  "password": { "type": "string" }
-                },
-                "required": ["email", "password"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Login successful",
-            "content": {
-              "application/json": {
-                "example": {
-                  "token": "jwt-token",
-                  "user_id": "64fa9c1234abcd",
-                  "role": "user"
-                }
-              }
+      },
+      "409": {
+        "description": "Email already registered",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Email already registered"
             }
           }
         }
-      }
-    },
-    "/api/user/waste/upload": {
-      "post": {
-        "summary": "Upload waste image (PNG/JPG only)",
-        "tags": ["User"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "file": { "type": "string", "format": "binary" }
-                },
-                "required": ["file"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Image uploaded successfully",
-            "content": {
-              "application/json": {
-                "example": { "image_url": "/uploads/sample.png" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/user/waste/submit": {
-      "post": {
-        "summary": "Submit waste pickup request",
-        "tags": ["User"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "user_id": { "type": "string" },
-                  "waste_type": {
-                    "type": "string",
-                    "enum": ["Plastic", "Paper", "Glass", "Organic"]
-                  },
-                  "weight": { "type": "number" },
-                  "image_url": { "type": "string" },
-                  "location": { "type": "string" },
-                  "phone": {
-                    "type": "string",
-                    "pattern": "^\\+91[0-9]{10}$",
-                    "example": "+919876543210"
-                  }
-                },
-                "required": ["user_id", "waste_type", "weight", "location", "phone"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Waste pickup request submitted",
-            "content": {
-              "application/json": {
-                "example": {
-                  "message": "Waste pickup request submitted",
-                  "request_id": "64fa9c1234efgh"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/user/waste/{id}": {
-      "get": {
-        "summary": "Get a specific waste pickup request (User)",
-        "tags": ["User"],
-        "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
-        ],
-        "responses": {
-          "200": {
-            "description": "Request details",
-            "content": {
-              "application/json": {
-                "example": {
-                  "_id": "66c2e7b1b9a8f8e2d1234567",
-                  "user_id": "66c2e7b1b9a8f8e2d6543210",
-                  "user_name": "Rohan",
-                  "waste_type": "Plastic",
-                  "weight": 5,
-                  "location": "Lovely building Baina, Vasco Goa",
-                  "phone": "+919876543210",
-                  "status": "pending",
-                  "collector_info": null,
-                  "image_url": "/uploads/test.png",
-                  "createdAt": "2025-08-16T18:05:00.123Z",
-                  "updatedAt": "2025-08-16T18:05:00.123Z"
-                }
-              }
-            }
-          },
-          "404": { "description": "Request not found" }
-        }
-      }
-    },
-    "/api/user/transactions/{user_id}": {
-      "get": {
-        "summary": "Get user transactions",
-        "tags": ["User"],
-        "parameters": [
-          { "name": "user_id", "in": "path", "required": true, "schema": { "type": "string" } }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of transactions",
-            "content": {
-              "application/json": {
-                "example": [
-                  {
-                    "_id": "64fa9c9876tx",
-                    "type": "credit",
-                    "points": 50,
-                    "description": "Waste submission (Plastic)"
-                  }
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/user/rewards/redeem": {
-      "post": {
-        "summary": "Redeem a reward",
-        "tags": ["User"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "user_id": { "type": "string" },
-                  "reward_id": { "type": "string" }
-                },
-                "required": ["user_id", "reward_id"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Reward redeemed successfully",
-            "content": {
-              "application/json": {
-                "example": { "message": "Reward redeemed successfully" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/user/all": {
-      "get": {
-        "summary": "Get all users (Admin only)",
-        "tags": ["Admin"],
-        "responses": {
-          "200": {
-            "description": "List of all users",
-            "content": {
-              "application/json": {
-                "example": [
-                  {
-                    "_id": "66c2e7b1b9a8f8e2d1234567",
-                    "name": "Rohan",
-                    "email": "rohan@example.com",
-                    "phone": "+919876543210",
-                    "points": 120
-                  },
-                  {
-                    "_id": "66c2e7b1b9a8f8e2d9876543",
-                    "name": "Aditi",
-                    "email": "aditi@example.com",
-                    "phone": "+919123456789",
-                    "points": 250
-                  }
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/admin/requests": {
-      "get": {
-        "summary": "Get all waste pickup requests",
-        "tags": ["Admin"],
-        "responses": {
-          "200": {
-            "description": "List of all pickup requests",
-            "content": {
-              "application/json": {
-                "example": [
-                  {
-                    "_id": "64fa9c1234efgh",
-                    "user_name": "Rohan",
-                    "phone": "+919876543210",
-                    "waste_type": "Plastic",
-                    "status": "pending"
-                  }
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/admin/requests/{id}/approve": {
-      "post": {
-        "summary": "Approve a waste pickup request (set status = approved)",
-        "tags": ["Admin"],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string" },
-            "description": "Request ID to approve (must be in pending status)"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "collector_info": {
-                    "type": "string",
-                    "example": "Collector Ram - +919876543210"
-                  }
-                },
-                "required": ["collector_info"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Request approved successfully",
-            "content": {
-              "application/json": {
-                "example": {
-                  "message": "Request approved",
-                  "request": {
-                    "_id": "66c2e7b1b9a8f8e2d1234567",
-                    "status": "approved",
-                    "collector_info": "Collector Ram - +919876543210"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/admin/requests/{id}/complete": {
-      "post": {
-        "summary": "Complete a waste pickup request (set status = completed and award points)",
-        "tags": ["Admin"],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string" },
-            "description": "Request ID to complete (must be approved first)"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Request completed and points awarded",
-            "content": {
-              "application/json": {
-                "example": {
-                  "message": "Request completed and points awarded",
-                  "request": {
-                    "_id": "66c2e7b1b9a8f8e2d1234567",
-                    "status": "completed",
-                    "points_awarded": 50
-                  }
-                }
-              }
+      },
+      "500": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Something went wrong. Please try again later."
             }
           }
         }
       }
     }
   }
-}
+},
+"/api/user/login": {
+  "post": {
+    "summary": "User login",
+    "tags": ["User"],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "email": { "type": "string", "format": "email", "example": "riya@example.com" },
+              "password": { "type": "string", "example": "password123" }
+            },
+            "required": ["email", "password"]
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Login successful",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": true,
+              "message": "Login successful",
+              "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+              "user": {
+                "_id": "66c2b9f1f2a4b6001f8e1234",
+                "name": "Riya",
+                "email": "riya@example.com",
+                "role": "user"
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "description": "Validation error",
+        "content": {
+          "application/json": {
+            "examples": {
+              "MissingField": {
+                "summary": "Email missing",
+                "value": {
+                  "success": false,
+                  "message": "Email is required"
+                }
+              },
+              "InvalidFormat": {
+                "summary": "Invalid email format",
+                "value": {
+                  "success": false,
+                  "message": "Invalid email format"
+                }
+              }
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Invalid credentials",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Invalid email or password"
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Something went wrong. Please try again later."
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/user/waste/submit": {
+  "post": {
+    "summary": "Submit waste pickup request with image",
+    "description": "Authenticated users can submit a waste pickup request. User ID and name are auto-attached from JWT.",
+    "tags": ["User"],
+    "security": [{ "bearerAuth": [] }],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "multipart/form-data": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "waste_type": { "type": "string", "enum": ["Plastic","Paper","Glass","Organic"], "example": "Plastic" },
+              "weight": { "type": "number", "example": 5 },
+              "location": { "type": "string", "example": "Lovely building Baina, Vasco Goa" },
+              "phone": { "type": "string", "example": "9876543210" },
+              "image": { "type": "string", "format": "binary", "description": "Waste image (PNG/JPG)" }
+            },
+            "required": ["waste_type","weight","location","phone","image"]
+          }
+        }
+      }
+    },
+    "responses": {
+      "201": {
+        "description": "Waste request submitted successfully",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": true,
+              "message": "Waste request submitted successfully",
+              "wasteRequest": {
+                "_id": "66d2a3b2c9a8f8e2d1234567",
+                "user": "66c2e7b1b9a8f8e2d9876543",
+                "user_name": "Riya",
+                "waste_type": "Plastic",
+                "weight": 5,
+                "location": "Lovely building Baina, Vasco Goa",
+                "phone": "9876543210",
+                "image_url": "/uploads/waste123.png",
+                "status": "pending",
+                "createdAt": "2025-08-26T12:34:56.000Z"
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "description": "Validation error or missing fields",
+        "content": {
+          "application/json": {
+            "examples": {
+              "MissingField": {
+                "summary": "Required field missing",
+                "value": { "success": false, "message": "waste_type is required" }
+              },
+              "InvalidFile": {
+                "summary": "Invalid file format",
+                "value": { "success": false, "message": "Only PNG and JPG files are allowed" }
+              }
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized - No or invalid JWT",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Unauthorized: No token provided or token is invalid"
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "example": { "success": false, "message": "Something went wrong. Please try again later." }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/user/waste/{id}": {
+      "get": {
+        "summary": "Get specific waste request by ID",
+        "description": "Authenticated users can fetch details of a waste request by its ID. Users should only be able to access their own requests.",
+        "tags": ["User"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "The unique ID of the waste request"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Waste request details retrieved successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "message": "Waste request fetched successfully",
+                  "wasteRequest": {
+                    "_id": "66c2e7b1f2a4b6001f8e5678",
+                    "user": "66c2e7b1b9a8f8e2d1234567",
+                    "user_name": "Riya",
+                    "waste_type": "Plastic",
+                    "weight": 5,
+                    "location": "Lovely building Baina, Vasco Goa",
+                    "phone": "9876543210",
+                    "image_url": "/uploads/test.png",
+                    "status": "pending",
+                    "collector_info": null,
+                    "createdAt": "2025-08-26T12:34:56.000Z",
+                    "updatedAt": "2025-08-26T12:34:56.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request ID format",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "message": "Invalid request ID format"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - No or invalid JWT provided",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "message": "Unauthorized: No token provided or token is invalid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Waste request not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "message": "Waste request not found"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "message": "Something went wrong. Please try again later."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+"/api/user/transactions": {
+  "get": {
+    "summary": "Get all transactions for the logged-in user",
+    "tags": ["User"],
+    "security": [
+      { "bearerAuth": [] }
+    ],
+    "responses": {
+      "200": {
+        "description": "Transactions fetched successfully",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": true,
+              "message": "Transactions fetched successfully",
+              "transactions": [
+                {
+                  "_id": "64fa9c9876tx",
+                  "user_id": "64fa9c1234abcd",
+                  "type": "credit",
+                  "points": 50,
+                  "description": "Completed waste request",
+                  "createdAt": "2025-08-20T12:30:00.000Z"
+                },
+                {
+                  "_id": "64fa9c9877tx",
+                  "user_id": "64fa9c1234abcd",
+                  "type": "debit",
+                  "points": 20,
+                  "description": "Redeemed points",
+                  "createdAt": "2025-08-21T09:15:00.000Z"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "404": {
+        "description": "No transactions found for the user",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "No transactions found for this user"
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Something went wrong. Please try again later."
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/user/profile": {
+  "get": {
+    "summary": "Get logged-in user profile",
+    "tags": ["User"],
+    "security": [{ "bearerAuth": [] }],
+    "responses": {
+      "200": {
+        "description": "User profile fetched successfully",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": true,
+              "message": "User profile fetched successfully",
+              "user": {
+                "_id": "66c2e7b1b9a8f8e2d1234567",
+                "name": "Riya",
+                "email": "riya@example.com",
+                "phone": "9876543210",
+                "points": 70,
+                "createdAt": "2025-08-20T12:30:00.000Z",
+                "updatedAt": "2025-08-22T10:15:00.000Z"
+              }
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized - invalid or missing token",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Unauthorized: No token provided or token is invalid"
+            }
+          }
+        }
+      },
+      "404": {
+        "description": "User not found",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "User not found"
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Something went wrong. Please try again later."
+            }
+          }
+        }
+      }
+    }
+  }
+},
+
+"/api/user/rewards": {
+  "get": {
+    "summary": "Get all available rewards for the logged-in user",
+    "tags": ["User"],
+    "security": [{ "bearerAuth": [] }],
+    "responses": {
+      "200": {
+        "description": "List of rewards fetched successfully",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": true,
+              "message": "Rewards fetched successfully",
+              "rewards": [
+                {
+                  "reward_id": "64fa9creward123",
+                  "name": "EcoCup",
+                  "points_required": 50,
+                  "description": "Reusable cup for eco-friendly usage"
+                },
+                {
+                  "reward_id": "64fa9creward124",
+                  "name": "Plant a Tree",
+                  "points_required": 100,
+                  "description": "Plant a tree in your local area"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized or invalid token",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Unauthorized: No token provided or token is invalid"
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Something went wrong. Please try again later."
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/user/rewards/redeem": {
+  "post": {
+    "summary": "Redeem a reward",
+    "tags": ["User"],
+    "security": [{ "bearerAuth": [] }],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "reward_id": { "type": "string", "example": "64fa9creward123" }
+            },
+            "required": ["reward_id"]
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Reward redeemed successfully",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": true,
+              "message": "Reward redeemed successfully",
+              "user": {
+                "_id": "66c2e7b1b9a8f8e2d1234567",
+                "name": "Riya",
+                "points": 70
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "description": "Validation error or insufficient points",
+        "content": {
+          "application/json": {
+            "examples": {
+              "MissingField": {
+                "summary": "Reward ID missing",
+                "value": {
+                  "success": false,
+                  "message": "reward_id is required"
+                }
+              },
+              "InsufficientPoints": {
+                "summary": "Not enough points",
+                "value": {
+                  "success": false,
+                  "message": "Not enough points to redeem this reward"
+                }
+              }
+            }
+          }
+        }
+      },
+      "404": {
+        "description": "Reward not found",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Reward not found for this user"
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized or invalid token",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Unauthorized: No token provided or token is invalid"
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Something went wrong. Please try again later."
+            }
+          }
+        }
+      }
+    }
+  }
+},
+
+
+
+"/api/admin/register": {
+  "post": {
+    "summary": "Register a new admin",
+    "tags": ["Admin"],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "example": "Admin" },
+              "email": { "type": "string", "format": "email", "example": "admin@ecopay.com" },
+              "password": { "type": "string", "example": "admin123" },
+              "confirmPassword": { "type": "string", "example": "admin123" }
+            },
+            "required": ["name", "email", "password", "confirmPassword"]
+          }
+        }
+      }
+    },
+    "responses": {
+      "201": {
+        "description": "Admin registered successfully",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": true,
+              "message": "Admin registered successfully",
+              "admin": {
+                "_id": "66c3e7b1f2a4b6001f8e6789",
+                "name": "Admin",
+                "email": "admin@ecopay.com",
+                "role": "admin",
+                "createdAt": "2025-08-26T14:30:00.000Z"
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "description": "Validation error or password mismatch",
+        "content": {
+          "application/json": {
+            "examples": {
+              "MissingField": {
+                "summary": "Required field missing",
+                "value": {
+                  "success": false,
+                  "message": "Email is required"
+                }
+              },
+              "PasswordMismatch": {
+                "summary": "Passwords do not match",
+                "value": {
+                  "success": false,
+                  "message": "Password and confirmPassword do not match"
+                }
+              }
+            }
+          }
+        }
+      },
+      "409": {
+        "description": "Email already registered",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Admin with this email already exists"
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Something went wrong. Please try again later."
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/admin/login": {
+  "post": {
+    "summary": "Admin login",
+    "tags": ["Admin"],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "email": { "type": "string", "format": "email", "example": "admin@ecopay.com" },
+              "password": { "type": "string", "example": "admin123" }
+            },
+            "required": ["email", "password"]
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Admin login successful",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": true,
+              "message": "Admin login successful",
+              "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+              "admin": {
+                "_id": "66c3e7b1f2a4b6001f8e6789",
+                "name": "Admin",
+                "email": "admin@ecopay.com",
+                "role": "admin"
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "description": "Validation error",
+        "content": {
+          "application/json": {
+            "examples": {
+              "MissingField": {
+                "summary": "Required field missing",
+                "value": {
+                  "success": false,
+                  "message": "Email is required"
+                }
+              },
+              "InvalidFormat": {
+                "summary": "Invalid email format",
+                "value": {
+                  "success": false,
+                  "message": "Invalid email format"
+                }
+              }
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized - invalid credentials",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Invalid email or password"
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Something went wrong. Please try again later."
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/admin/requests": {
+  "get": {
+    "summary": "Get all waste pickup requests",
+    "tags": ["Admin"],
+    "security": [{ "bearerAuth": [] }],
+    "responses": {
+      "200": {
+        "description": "List of all waste pickup requests",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": true,
+              "message": "Pickup requests fetched successfully",
+              "requests": [
+                {
+                  "_id": "66c2e7b1f2a4b6001f8e5678",
+                  "user_id": "66c2e7b1b9a8f8e2d1234567",
+                  "user_name": "Riya",
+                  "phone": "9876543210",
+                  "waste_type": "Plastic",
+                  "weight": 5,
+                  "location": "Lovely building Baina, Vasco Goa",
+                  "image_url": "/uploads/waste123.png",
+                  "status": "pending",
+                  "collector_info": null,
+                  "createdAt": "2025-08-26T12:34:56.000Z",
+                  "updatedAt": "2025-08-26T12:34:56.000Z"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "404": {
+        "description": "No pickup requests found",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "No pickup requests found"
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Something went wrong. Please try again later."
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/admin/requests/{id}/approve": {
+  "post": {
+    "summary": "Approve a waste pickup request",
+    "tags": ["Admin"],
+    "security": [{ "bearerAuth": [] }],
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "The unique ID of the waste request"
+      }
+    ],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "collector_info": { "type": "string", "example": "Rahul (Truck GJ-01-1234)" }
+            },
+            "required": ["collector_info"]
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Request approved successfully",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": true,
+              "message": "Waste pickup request approved successfully",
+              "request": {
+                "_id": "66c2e7b1f2a4b6001f8e5678",
+                "status": "approved",
+                "collector_info": "Rahul (Truck GJ-01-1234)"
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "description": "Validation error",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "collector_info is required"
+            }
+          }
+        }
+      },
+      "404": {
+        "description": "Waste request not found",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Waste request not found"
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Something went wrong. Please try again later."
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/admin/requests/{id}/complete": {
+  "post": {
+    "summary": "Mark a waste pickup request as completed and credit points",
+    "tags": ["Admin"],
+    "security": [{ "bearerAuth": [] }],
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "The unique ID of the waste request"
+      }
+    ],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "points": { "type": "number", "example": 20 }
+            },
+            "required": ["points"]
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Request completed successfully and points credited",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": true,
+              "message": "Waste pickup request marked as completed and points credited",
+              "request": {
+                "_id": "66c2e7b1f2a4b6001f8e5678",
+                "status": "completed",
+                "points_credited": 20
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "description": "Validation error",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Points value is required"
+            }
+          }
+        }
+      },
+      "404": {
+        "description": "Waste request not found",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Waste request not found"
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Something went wrong. Please try again later."
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/admin/users": {
+  "get": {
+    "summary": "Get all registered users",
+    "tags": ["Admin"],
+    "security": [{ "bearerAuth": [] }],
+    "responses": {
+      "200": {
+        "description": "List of all users retrieved successfully",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": true,
+              "message": "Users fetched successfully",
+              "users": [
+                {
+                  "_id": "66c2e7b1b9a8f8e2d1234567",
+                  "name": "Riya",
+                  "email": "riya@example.com",
+                  "phone": "9876543210",
+                  "points": 120,
+                  "createdAt": "2025-08-20T10:15:00.000Z",
+                  "updatedAt": "2025-08-26T12:00:00.000Z"
+                },
+                {
+                  "_id": "66c2e7b1b9a8f8e2d1234568",
+                  "name": "Amit",
+                  "email": "amit@example.com",
+                  "phone": "9876543211",
+                  "points": 80,
+                  "createdAt": "2025-08-21T11:20:00.000Z",
+                  "updatedAt": "2025-08-26T12:05:00.000Z"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "404": {
+        "description": "No users found",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "No users found"
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Something went wrong. Please try again later."
+            }
+            }
+            }
+            }
+            }
+            }
+            }
+            }
+          }

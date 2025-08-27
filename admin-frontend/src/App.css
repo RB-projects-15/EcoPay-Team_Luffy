@@ -1,48 +1,193 @@
-/* Import Tailwind utilities */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* src/App.css */
 
-/* ===== Custom global styles ===== */
-
-/* Smooth font rendering */
+/* === Global Styles === */
 body {
-  @apply font-sans bg-gray-100 text-gray-800;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f3f4f6; /* Tailwind gray-100 */
+  color: #1f2937; /* Tailwind gray-800 */
 }
 
-/* Scrollbar styling */
+a {
+  text-decoration: none;
+}
+
+ul, ol {
+  list-style: none;
+  padding: 0;
+}
+
+/* === Scrollbar Styling === */
 ::-webkit-scrollbar {
   width: 8px;
-  height: 8px;
-}
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
 }
 ::-webkit-scrollbar-thumb {
-  background-color: #16a34a; /* green-600 */
-  border-radius: 10px;
+  background-color: rgba(107, 114, 128, 0.5);
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #15803d; /* green-700 */
+  background-color: rgba(107, 114, 128, 0.8);
 }
 
-/* Sidebar link active state (in case Tailwind NavLink fails in some browsers) */
-.active-link {
-  @apply bg-green-600 text-white;
+/* === Sidebar === */
+.sidebar {
+  background: linear-gradient(to bottom, #047857, #065f46); /* Tailwind green-700 to green-800 */
+  color: white;
+  width: 16rem;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
 }
 
-/* Page container padding */
-.page-container {
-  @apply p-6;
+.sidebar a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
 }
 
-/* Card shadow utility */
+.sidebar a.active,
+.sidebar a:hover {
+  background-color: #16a34a; /* Tailwind green-600 */
+  transform: scale(1.03);
+}
+
+/* === Topbar === */
+.topbar {
+  height: 4rem;
+  background-color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* === Stats / Cards === */
 .card {
-  @apply bg-white shadow-md rounded-xl p-6;
-  transition: transform 0.2s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(to bottom right, #34d399, #10b981); /* Tailwind green gradient */
+  color: white;
+  box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
+
 .card:hover {
-  transform: translateY(-3px);
+  transform: scale(1.05);
+  box-shadow: 0 15px 25px rgba(0,0,0,0.15);
+}
+
+.card h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.card p {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 0.5rem;
+}
+
+/* === Tables === */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead tr {
+  background: linear-gradient(to right, #16a34a, #22c55e); /* Tailwind green-600 to green-500 */
+  color: white;
+}
+
+th, td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+
+tr:nth-child(even) {
+  background-color: #f9fafb; /* Tailwind gray-50 */
+}
+
+tr:hover {
+  background-color: #d1fae5; /* Tailwind green-100 */
+  transition: background 0.3s ease;
+}
+
+/* Status badges */
+.status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-pending {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+
+.status-approved {
+  background-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+.status-completed {
+  background-color: #bbf7d0;
+  color: #15803d;
+}
+
+/* === Buttons === */
+button {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 0.5rem;
+  font-weight: 600;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  background-color: #9ca3af; /* Tailwind gray-400 */
+}
+
+/* === Form Inputs === */
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background-color: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: white;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+input:focus {
+  border-color: #facc15; /* Tailwind yellow-400 */
+  box-shadow: 0 0 0 2px rgba(250,204,21,0.3);
+}
+
+/* === Responsive Adjustments === */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 12rem;
+    padding: 1rem;
+  }
+
+  .topbar h1 {
+    font-size: 1rem;
+  }
 }

@@ -1,181 +1,258 @@
-// backend/src/controllers/userController.js
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const Joi = require("joi");
 const User = require("../models/User");
 const WasteRequest = require("../models/WasteRequest");
 const Transaction = require("../models/Transaction");
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_key";
+const JWT_SECRET = process.env.JWT_SECRET || "R1yA$up3rS3cr3tK3y!2025";
 
-// ===== Joi Schemas =====
-const registerSchema = Joi.object({
-  name: Joi.string().min(2).max(50).required(),
-  email: Joi.string().email().required(),
-  password: Joi.string().min(6).required(),
-  confirmPassword: Joi.ref("password"),
-  phone: Joi.string()
-    .pattern(/^\+91[0-9]{10}$/) // ✅ Only +91 followed by 10 digits
-    .required(),
-});
-
-const loginSchema = Joi.object({
-  email: Joi.string().email().required(),
-  password: Joi.string().required(),
-});
-
-const wasteSchema = Joi.object({
-  user_id: Joi.string().required(),
-  waste_type: Joi.string()
-    .valid("Plastic", "Paper", "Glass", "Organic")
-    .required(),
-  weight: Joi.number().positive().required(),
-  location: Joi.string().required(),
-  image_url: Joi.string().allow(null, ""),
-});
-
-// ===== Register =====
+// ===== User Registration =====
 exports.register = async (req, res) => {
   try {
-    const { error } = registerSchema.validate(req.body);
-    if (error) return res.status(400).json({ error: error.details[0].message });
+    const { name, email, password, confirmPassword, phone } = req.body;
 
-    const { name, email, password, phone } = req.body;
-
-    // Check if email exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ error: "Email already exists" });
+    // ✅ Check required fields
+    if (!name || !email || !password || !confirmPassword || !phone) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "All fields (name, email, phone, password, confirmPassword) are required",
+      });
     }
 
-    // Hash password
-    const hashed = await bcrypt.hash(password, 10);
+    // ✅ Password confirmation check
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Password and confirmPassword do not match",
+      });
+    }
 
-    const user = new User({ name, email, password: hashed, phone });
+    // ✅ Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser)
+      return res
+        .status(400)
+        .json({ success: false, message: "Email already registered" });
+
+    // ✅ Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // ✅ Save user
+    const user = new User({ name, email, phone, password: hashedPassword });
     await user.save();
 
-    res.json({ message: "User registered successfully", user_id: user._id });
+    res.status(201).json({
+      success: true,
+      message: "User registered successfully",
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+      },
+    });
   } catch (err) {
     console.error("Register Error:", err);
-    res.status(500).json({ error: "Server error" });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: err.message });
   }
 };
 
-// ===== Login =====
+// ===== User Login =====
 exports.login = async (req, res) => {
   try {
-    const { error } = loginSchema.validate(req.body);
-    if (error) return res.status(400).json({ error: error.details[0].message });
-
     const { email, password } = req.body;
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ error: "Invalid credentials" });
+    if (!user)
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
 
-    const ok = await bcrypt.compare(password, user.password);
-    if (!ok) return res.status(400).json({ error: "Invalid credentials" });
+    const match = await bcrypt.compare(password, user.password);
+    if (!match)
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
 
-    const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
+    const token = jwt.sign({ id: user._id, role: "user" }, JWT_SECRET, {
       expiresIn: "7d",
     });
-
-    res.json({ token, user_id: user._id, role: user.role });
+    res.json({ success: true, message: "Login successful", token });
   } catch (err) {
     console.error("Login Error:", err);
-    res.status(500).json({ error: "Server error" });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: err.message });
   }
 };
 
-// ===== Submit Waste Pickup Request =====
+// ===== Submit Waste Request =====
 exports.submitWaste = async (req, res) => {
   try {
-    const { error } = wasteSchema.validate(req.body);
-    if (error) return res.status(400).json({ error: error.details[0].message });
+    const { waste_type, weight, location, phone } = req.body;
 
-    const { user_id, waste_type, weight, location, image_url } = req.body;
+    // Check if image is uploaded
+    if (!req.file) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Waste image is required" });
+    }
 
-    const user = await User.findById(user_id);
-    if (!user) return res.status(404).json({ error: "User not found" });
+    // Get logged-in user info
+    const user = await User.findById(req.user.id).select("name");
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
 
-    const request = new WasteRequest({
-      user_id: user._id,
+    // Create waste request
+    const wasteRequest = new WasteRequest({
+      user: req.user.id, // ✅ Must match schema
       user_name: user.name,
-      phone: user.phone, // ✅ Auto attach phone from User
+      phone,
       waste_type,
       weight,
       location,
-      image_url,
+      image_url: `/uploads/${req.file.filename}`,
     });
 
-    await request.save();
+    await wasteRequest.save();
 
-    res.json({
-      message: "Waste pickup request submitted successfully",
-      request_id: request._id,
+    res.status(201).json({
+      success: true,
+      message: "Waste request submitted successfully",
+      wasteRequest,
     });
-  } catch (err) {
-    console.error("Waste Submit Error:", err);
-    res.status(500).json({ error: "Server error" });
+  } catch (error) {
+    console.error("Submit Waste Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong. Please try again later.",
+      error: error.message, // optional: include for debugging
+    });
   }
 };
 
-// ===== Get User Transactions =====
+// ===== Get Transactions =====
 exports.getTransactions = async (req, res) => {
   try {
-    const { user_id } = req.params;
-    const user = await User.findById(user_id);
-    if (!user) return res.status(404).json({ error: "User not found" });
+    // Fetch transactions for the logged-in user
+    const transactions = await Transaction.find({ user: req.user.id });
 
-    const tx = await Transaction.find({ user_id }).sort({ createdAt: -1 });
-    res.json(tx);
+    if (!transactions.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No transactions found for this user",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Transactions fetched successfully",
+      transactions,
+    });
   } catch (err) {
-    console.error("Transactions Error:", err);
-    res.status(500).json({ error: "Server error" });
+    console.error("Get Transactions Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong. Please try again later.",
+      error: err.message,
+    });
+  }
+};
+// ===== Get User Profile =====
+exports.getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select(
+      "_id name email phone points createdAt updatedAt"
+    );
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "User profile fetched successfully",
+      user,
+    });
+  } catch (err) {
+    console.error("Get Profile Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong. Please try again later.",
+      error: err.message,
+    });
+  }
+};
+
+// ===== Get Available Rewards =====
+exports.getRewards = async (req, res) => {
+  try {
+    // For now, let's use static rewards. Later, you can fetch from DB
+    const rewards = [
+      {
+        reward_id: "64fa9creward123",
+        name: "EcoCup",
+        points_required: 50,
+        description: "Reusable cup for eco-friendly usage",
+      },
+      {
+        reward_id: "64fa9creward124",
+        name: "Plant a Tree",
+        points_required: 100,
+        description: "Plant a tree in your local area",
+      },
+    ];
+
+    res.status(200).json({
+      success: true,
+      message: "Rewards fetched successfully",
+      rewards,
+    });
+  } catch (err) {
+    console.error("Get Rewards Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong. Please try again later.",
+    });
   }
 };
 
 // ===== Redeem Reward =====
 exports.redeemReward = async (req, res) => {
   try {
-    const { user_id, reward_id } = req.body;
+    const userId = req.user.id; // ✅ no need to pass user_id in body
+    const { reward_id } = req.body;
 
-    const rewards = [
-      { id: "r1", name: "Reusable Bag", cost: 100 },
-      { id: "r2", name: "Coffee Mug", cost: 250 },
-    ];
+    const user = await User.findById(userId);
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
 
-    const reward = rewards.find((r) => r.id === reward_id);
-    if (!reward) return res.status(400).json({ error: "Invalid reward" });
+    const rewardPoints = 50; // example fixed points for reward
+    if ((user.points || 0) < rewardPoints)
+      return res
+        .status(400)
+        .json({ success: false, message: "Not enough points to redeem" });
 
-    const user = await User.findById(user_id);
-    if (!user) return res.status(404).json({ error: "User not found" });
-    if (user.points < reward.cost)
-      return res.status(400).json({ error: "Not enough points" });
-
-    user.points -= reward.cost;
+    user.points -= rewardPoints;
     await user.save();
 
-    const tx = new Transaction({
-      user_id,
-      type: "debit",
-      points: reward.cost,
-      description: `Redeemed ${reward.name}`,
+    res.json({
+      success: true,
+      message: "Reward redeemed successfully",
+      user: { _id: user._id, name: user.name, points: user.points },
     });
-    await tx.save();
-
-    res.json({ message: "Reward redeemed successfully" });
   } catch (err) {
     console.error("Redeem Reward Error:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-};
-
-// ===== Get All Users (Admin only) =====
-exports.getAllUsers = async (req, res) => {
-  try {
-    const users = await User.find().select("-password"); // hide password
-    res.json(users);
-  } catch (err) {
-    console.error("Get Users Error:", err);
-    res.status(500).json({ error: "Server error" });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: err.message });
   }
 };

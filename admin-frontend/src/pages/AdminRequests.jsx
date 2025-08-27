@@ -1,4 +1,4 @@
-// src/pages/AdminRequests.jsx
+// admin-frontend/src/pages/AdminRequests.jsx
 import { useEffect, useState } from "react";
 import {
   fetchRequests,
@@ -8,26 +8,42 @@ import {
 
 export default function AdminRequests() {
   const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadRequests();
   }, []);
 
   const loadRequests = async () => {
-    const data = await fetchRequests();
-    setRequests(data);
+    setLoading(true);
+    try {
+      const data = await fetchRequests();
+      setRequests(data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleApprove = async (id) => {
-    const collector_info = prompt("Enter collector name & phone:");
+    const collector_info = prompt("Enter collector name & phone:")?.trim();
     if (!collector_info) return;
-    await approveRequest(id, { collector_info });
-    loadRequests();
+    try {
+      await approveRequest(id, { collector_info });
+      loadRequests();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleComplete = async (id) => {
-    await completeRequest(id);
-    loadRequests();
+    try {
+      await completeRequest(id);
+      loadRequests();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -50,7 +66,16 @@ export default function AdminRequests() {
             </tr>
           </thead>
           <tbody>
-            {requests.length === 0 ? (
+            {loading ? (
+              <tr>
+                <td
+                  colSpan="7"
+                  className="text-center py-6 text-gray-500 font-medium"
+                >
+                  Loading requests...
+                </td>
+              </tr>
+            ) : requests.length === 0 ? (
               <tr>
                 <td
                   colSpan="7"

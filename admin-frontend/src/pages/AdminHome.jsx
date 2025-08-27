@@ -1,4 +1,4 @@
-// src/pages/AdminHome.jsx
+// admin-frontend/src/pages/AdminHome.jsx
 import { Outlet } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
@@ -9,14 +9,13 @@ export default function AdminHome() {
       {/* Sidebar */}
       <Sidebar />
 
-      {/* Main Content Area */}
+      {/* Main Content */}
       <div className="flex flex-col flex-1 min-h-screen">
         <Topbar />
 
-        {/* Content Wrapper */}
+        {/* Child pages */}
         <main className="p-6 overflow-y-auto flex-1">
           <div className="bg-white shadow-xl rounded-3xl p-6 min-h-full w-full transition-all duration-300 hover:shadow-2xl">
-            {/* This is where child routes render */}
             <Outlet />
           </div>
         </main>

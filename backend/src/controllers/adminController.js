@@ -1,100 +1,237 @@
 // backend/src/controllers/adminController.js
 const Joi = require("joi");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
+
 const WasteRequest = require("../models/WasteRequest");
 const User = require("../models/User");
 const Transaction = require("../models/Transaction");
+const Admin = require("../models/Admin");
+
+const JWT_SECRET = process.env.JWT_SECRET || "R1yA$up3rS3cr3tK3y!2025";
 
 // ===== Joi Schemas =====
 const approveSchema = Joi.object({
   collector_info: Joi.string()
     .pattern(/^Collector\s+[A-Za-z]+(\s+[A-Za-z]+)*\s+-\s+\+91[0-9]{10}$/)
-    .message("Collector info must be like: Collector Ram - +919876543210")
     .required(),
 });
 
-// ===== Get All Requests =====
-exports.getRequests = async (req, res) => {
+// ===== Admin Register =====
+const register = async (req, res) => {
   try {
-    const requests = await WasteRequest.find().sort({ createdAt: -1 });
-    res.json(requests);
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Name, email, and password are required",
+      });
+    }
+
+    const existingAdmin = await Admin.findOne({ email });
+    if (existingAdmin) {
+      return res.status(409).json({
+        success: false,
+        message: "Admin with this email already exists",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newAdmin = new Admin({ name, email, password: hashedPassword });
+    await newAdmin.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Admin registered successfully",
+      admin: { _id: newAdmin._id, name, email, role: "admin" },
+    });
   } catch (err) {
-    console.error("Get Requests Error:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({
+      success: false,
+      message: "Server error, please try again later",
+      error: err.message,
+    });
+  }
+};
+
+// ===== Admin Login =====
+const loginAdmin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const admin = await Admin.findOne({ email });
+    if (!admin)
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
+
+    const isMatch = await bcrypt.compare(password, admin.password);
+    if (!isMatch)
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
+
+    const token = jwt.sign({ id: admin._id, role: "admin" }, JWT_SECRET, {
+      expiresIn: "7d",
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Admin login successful",
+      token,
+      admin: {
+        _id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        role: "admin",
+      },
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Server error, please try again later",
+      error: err.message,
+    });
+  }
+};
+
+// ===== Get All Requests =====
+const getRequests = async (req, res) => {
+  try {
+    const requests = await WasteRequest.find().populate(
+      "user_id",
+      "name email"
+    );
+    res.status(200).json({
+      success: true,
+      message: "Pickup requests fetched successfully",
+      requests,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Server error, please try again later",
+      error: err.message,
+    });
   }
 };
 
 // ===== Approve Request =====
-exports.approveRequest = async (req, res) => {
+const approveRequest = async (req, res) => {
   try {
-    const { error } = approveSchema.validate(req.body);
-    if (error) return res.status(400).json({ error: error.details[0].message });
-
-    const { id } = req.params;
-    const { collector_info } = req.body;
-
-    const request = await WasteRequest.findById(id);
-    if (!request) return res.status(404).json({ error: "Request not found" });
-    if (request.status !== "pending")
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res
         .status(400)
-        .json({ error: "Request already approved or completed" });
+        .json({ success: false, message: "Invalid request ID" });
+    }
+
+    const { error } = approveSchema.validate(req.body);
+    if (error)
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
+
+    const request = await WasteRequest.findById(req.params.id);
+    if (!request)
+      return res
+        .status(404)
+        .json({ success: false, message: "Waste request not found" });
 
     request.status = "approved";
-    request.collector_info = collector_info;
+    request.collector_info = req.body.collector_info;
     await request.save();
 
-    res.json({
-      message: "Request approved",
+    res.status(200).json({
+      success: true,
+      message: "Waste pickup request approved successfully",
       request,
     });
   } catch (err) {
-    console.error("Approve Error:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({
+      success: false,
+      message: "Server error, please try again later",
+      error: err.message,
+    });
   }
 };
 
 // ===== Complete Request =====
-exports.completeRequest = async (req, res) => {
+const completeRequest = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const request = await WasteRequest.findById(id);
-    if (!request) return res.status(404).json({ error: "Request not found" });
-    if (request.status !== "approved")
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res
         .status(400)
-        .json({ error: "Request must be approved before completing" });
-
-    request.status = "completed";
-
-    // Award points based on weight (example: 10 points per kg)
-    const pointsAwarded = request.weight * 10;
-
-    request.points_awarded = pointsAwarded;
-    await request.save();
-
-    // Update user points
-    const user = await User.findById(request.user_id);
-    if (user) {
-      user.points += pointsAwarded;
-      await user.save();
-
-      // Save transaction
-      const tx = new Transaction({
-        user_id: user._id,
-        type: "credit",
-        points: pointsAwarded,
-        description: `Waste submission (${request.waste_type})`,
-      });
-      await tx.save();
+        .json({ success: false, message: "Invalid request ID" });
     }
 
-    res.json({
-      message: "Request completed and points awarded",
+    const request = await WasteRequest.findById(req.params.id).populate(
+      "user_id"
+    );
+    if (!request)
+      return res
+        .status(404)
+        .json({ success: false, message: "Waste request not found" });
+
+    request.status = "completed";
+    await request.save();
+
+    // Handle points
+    const points = Number(req.body.points) || 0;
+
+    const transaction = new Transaction({
+      user: request.user_id._id,
+      request: request._id,
+      points,
+      description: "Completed waste request",
+    });
+    await transaction.save();
+
+    request.user_id.points = (request.user_id.points || 0) + points;
+    await request.user_id.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Waste pickup request completed and points credited",
       request,
+      transaction,
     });
   } catch (err) {
-    console.error("Complete Error:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({
+      success: false,
+      message: "Server error, please try again later",
+      error: err.message,
+    });
   }
+};
+
+// ===== Get All Users =====
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find(
+      {},
+      "name email phone points createdAt updatedAt"
+    );
+    res.status(200).json({
+      success: true,
+      message: "Users fetched successfully",
+      users,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Server error, please try again later",
+      error: err.message,
+    });
+  }
+};
+
+module.exports = {
+  register,
+  loginAdmin,
+  getRequests,
+  approveRequest,
+  completeRequest,
+  getAllUsers,
 };

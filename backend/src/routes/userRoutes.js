@@ -1,42 +1,54 @@
 // backend/src/routes/userRoutes.js
 const express = require("express");
 const router = express.Router();
+const WasteRequest = require("../models/WasteRequest");
 const upload = require("../middlewares/upload");
-const userController = require("../controllers/userController");
 
-// Auth
-router.post("/register", userController.register);
-router.post("/login", userController.login);
+const {
+  register,
+  login,
+  submitWaste,
+  getTransactions,
+  redeemReward,
+  getRewards, // <- new
+  getProfile, // 👈 import the new controller
+} = require("../controllers/userController");
 
-// Waste Requests
-router.post("/waste/upload", upload.single("file"), (req, res) => {
-  if (!req.file)
-    return res.status(400).json({ error: "Only .png/.jpg allowed" });
-  res.json({ image_url: `/uploads/${req.file.filename}` });
-});
+const { authMiddleware } = require("../middlewares/authMiddleware");
 
-router.post("/waste/submit", userController.submitWaste);
+// ----------------- PUBLIC ROUTES -----------------
+router.post("/register", register);
+router.post("/login", login);
 
-// Transactions
-router.get("/transactions/:user_id", userController.getTransactions);
+// ----------------- USER-PROTECTED ROUTES -----------------
+router.use(authMiddleware); // 🔒 All routes below need JWT
 
-// Rewards
-router.post("/rewards/redeem", userController.redeemReward);
+// Submit waste request with file upload
+router.post("/waste/submit", upload.single("image"), submitWaste);
 
-// ✅ Get user’s specific request by ID
+// Get user transactions (from JWT, no need user_id in params)
+router.get("/transactions", authMiddleware, getTransactions);
+// Redeem rewards
+router.get("/rewards", authMiddleware, getRewards); // list all rewards
+router.post("/rewards/redeem", redeemReward);
+
+// Get specific waste request by ID
 router.get("/waste/:id", async (req, res) => {
   try {
-    const request = await require("../models/WasteRequest").findById(
-      req.params.id
-    );
-    if (!request) return res.status(404).json({ error: "Request not found" });
-    res.json(request);
+    const request = await WasteRequest.findById(req.params.id);
+    if (!request) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Request not found" });
+    }
+    res.json({ success: true, wasteRequest: request });
   } catch (err) {
     console.error("Error fetching user request:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
-// ✅ Add this route for admin to fetch all users
-router.get("/all", userController.getAllUsers);
+
+// ✅ Add new profile route
+router.get("/profile", authMiddleware, getProfile);
 
 module.exports = router;

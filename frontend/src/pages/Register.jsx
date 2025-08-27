@@ -22,10 +22,12 @@ export default function Register() {
     e.preventDefault();
     setError("");
 
-    // validate phone
-    const phoneRegex = /^\+91[0-9]{10}$/;
+    // ✅ updated phone validation
+    const phoneRegex = /^[6-9]\d{9}$/;
     if (!phoneRegex.test(form.phone)) {
-      setError("Phone must be in format +91XXXXXXXXXX (10 digits)");
+      setError(
+        "Phone number must start with 9, 8, 7, or 6 and be exactly 10 digits"
+      );
       return;
     }
 
@@ -109,7 +111,7 @@ export default function Register() {
           <input
             type="text"
             name="phone"
-            placeholder="Phone (+91XXXXXXXXXX)"
+            placeholder="Phone (10 digits starting with 9, 8, 7, or 6)"
             value={form.phone}
             onChange={handleChange}
             required

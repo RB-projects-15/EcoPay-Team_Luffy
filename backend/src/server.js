@@ -1,4 +1,5 @@
 // backend/src/server.js
+require("dotenv").config(); // ✅ Load .env variables
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
@@ -21,13 +22,14 @@ app.use(
 
 app.use(bodyParser.json());
 
-// ✅ Serve uploaded files correctly
+// ✅ Serve uploaded files
 const uploadsPath = path.join(__dirname, "../uploads");
 app.use("/uploads", express.static(uploadsPath));
 
 // ====== MongoDB Connection ======
+const mongoURL = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/ecopay";
 mongoose
-  .connect("mongodb://127.0.0.1:27017/ecopay")
+  .connect(mongoURL)
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 

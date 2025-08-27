@@ -1,5 +1,5 @@
-// src/components/Sidebar.jsx
-import { NavLink } from "react-router-dom";
+// admin-frontend/src/components/Sidebar.jsx
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -7,14 +7,21 @@ import {
   ClipboardList,
   LogOut,
 } from "lucide-react";
+import { logoutAdmin } from "../services/adminApi";
 
 export default function Sidebar() {
+  const navigate = useNavigate();
+
   const navItem =
     "flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-300";
-
   const navActive = "bg-green-600 text-white shadow-md scale-[1.03]";
   const navInactive =
     "text-gray-200 hover:bg-green-500 hover:text-white hover:scale-[1.02]";
+
+  const handleLogout = () => {
+    logoutAdmin(); // clears token from localStorage
+    navigate("/admin/login"); // redirect to login page
+  };
 
   return (
     <div className="w-64 bg-gradient-to-b from-green-700 to-green-900 text-white flex flex-col shadow-xl">
@@ -26,8 +33,7 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2">
         <NavLink
-          to="/"
-          end
+          to="/admin/home/dashboard"
           className={({ isActive }) =>
             `${navItem} ${isActive ? navActive : navInactive}`
           }
@@ -37,7 +43,7 @@ export default function Sidebar() {
         </NavLink>
 
         <NavLink
-          to="/requests"
+          to="/admin/home/requests"
           className={({ isActive }) =>
             `${navItem} ${isActive ? navActive : navInactive}`
           }
@@ -47,7 +53,7 @@ export default function Sidebar() {
         </NavLink>
 
         <NavLink
-          to="/users"
+          to="/admin/home/users"
           className={({ isActive }) =>
             `${navItem} ${isActive ? navActive : navInactive}`
           }
@@ -57,7 +63,7 @@ export default function Sidebar() {
         </NavLink>
 
         <NavLink
-          to="/reports"
+          to="/admin/home/reports"
           className={({ isActive }) =>
             `${navItem} ${isActive ? navActive : navInactive}`
           }
@@ -69,7 +75,10 @@ export default function Sidebar() {
 
       {/* Footer / Logout */}
       <div className="p-4 border-t border-green-600">
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-green-800 hover:bg-red-600 transition-all duration-300">
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-green-800 hover:bg-red-600 transition-all duration-300"
+        >
           <LogOut size={20} />
           Logout
         </button>

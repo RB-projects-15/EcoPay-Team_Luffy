@@ -1,16 +1,26 @@
+// backend/src/routes/adminRoutes.js
 const express = require("express");
 const router = express.Router();
 const adminController = require("../controllers/adminController");
+const { adminMiddleware } = require("../middlewares/adminMiddleware");
 
-// ===== Admin Routes =====
+// ----------------- PUBLIC ROUTES -----------------
 
-// Get all requests
+// Admin registration
+router.post("/register", adminController.register);
+
+// Admin login
+router.post("/login", adminController.loginAdmin);
+
+// ----------------- ADMIN-PROTECTED ROUTES -----------------
+router.use(adminMiddleware); // 🔒 ADMIN token required
+
+// Waste request management
 router.get("/requests", adminController.getRequests);
-
-// Approve a request by ID
 router.post("/requests/:id/approve", adminController.approveRequest);
-
-// Complete a request by ID
 router.post("/requests/:id/complete", adminController.completeRequest);
+
+// User management
+router.get("/users", adminController.getAllUsers);
 
 module.exports = router;

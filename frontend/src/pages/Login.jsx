@@ -26,7 +26,7 @@ export default function Login() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Login failed");
+        setError(data.error || data.message || "Login failed");
         return;
       }
 
@@ -36,8 +36,11 @@ export default function Login() {
         "user",
         JSON.stringify({
           user_id: data.user_id,
-          email: form.email,
-          role: data.role, // <-- NEW (admin/user)
+          name: data.name, // ✅ NEW
+          email: data.email, // ✅ backend returns directly
+          phone: data.phone, // ✅ NEW
+          role: data.role, // ✅ admin/user
+          points: data.points || 0, // ✅ NEW (default 0 if missing)
         })
       );
 
