@@ -998,8 +998,18 @@
               "message": "Waste pickup request marked as completed and points credited",
               "request": {
                 "_id": "66c2e7b1f2a4b6001f8e5678",
+                "user": "66c2e7b1f2a4b6001f8e1234",
+                "user_name": "Riya",
+                "phone": "9876543210",
+                "waste_type": "Plastic",
+                "weight": 5,
+                "location": "Sector 22, Delhi",
+                "image_url": "https://example.com/image.jpg",
                 "status": "completed",
-                "points_credited": 20
+                "collector_info": "Collector Rahul - +919876543210",
+                "points_credited": 20,
+                "createdAt": "2025-08-20T10:15:00.000Z",
+                "updatedAt": "2025-08-27T12:30:00.000Z"
               }
             }
           }
@@ -1041,6 +1051,7 @@
     }
   }
 },
+
 "/api/admin/users": {
   "get": {
     "summary": "Get all registered users",
@@ -1096,12 +1107,9 @@
             "example": {
               "success": false,
               "message": "Something went wrong. Please try again later."
-            }
-            }
-            }
-            }
-            }
-            }
-            }
-            }
-          }
+            }}}}}}}}}
+        
+        
+      
+    
+  

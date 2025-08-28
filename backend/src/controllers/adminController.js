@@ -100,10 +100,7 @@ const loginAdmin = async (req, res) => {
 // ===== Get All Requests =====
 const getRequests = async (req, res) => {
   try {
-    const requests = await WasteRequest.find().populate(
-      "user_id",
-      "name email"
-    );
+    const requests = await WasteRequest.find().populate("user", "name email");
     res.status(200).json({
       success: true,
       message: "Pickup requests fetched successfully",
@@ -166,30 +163,38 @@ const completeRequest = async (req, res) => {
         .json({ success: false, message: "Invalid request ID" });
     }
 
-    const request = await WasteRequest.findById(req.params.id).populate(
-      "user_id"
-    );
-    if (!request)
+    const { points } = req.body;
+    if (typeof points !== "number" || points <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Points value is required and must be positive",
+      });
+    }
+
+    const request = await WasteRequest.findById(req.params.id).populate("user");
+    if (!request) {
       return res
         .status(404)
         .json({ success: false, message: "Waste request not found" });
+    }
 
+    // Mark request as completed
     request.status = "completed";
+    request.points_credited = points;
     await request.save();
 
-    // Handle points
-    const points = Number(req.body.points) || 0;
-
+    // Create transaction according to schema
     const transaction = new Transaction({
-      user: request.user_id._id,
-      request: request._id,
+      user_id: request.user._id, // must match schema
       points,
+      type: "credit", // mandatory
       description: "Completed waste request",
     });
     await transaction.save();
 
-    request.user_id.points = (request.user_id.points || 0) + points;
-    await request.user_id.save();
+    // Update user points
+    request.user.points = (request.user.points || 0) + points;
+    await request.user.save();
 
     res.status(200).json({
       success: true,
@@ -207,12 +212,19 @@ const completeRequest = async (req, res) => {
 };
 
 // ===== Get All Users =====
-const getAllUsers = async (req, res) => {
+const getUsers = async (req, res) => {
   try {
     const users = await User.find(
       {},
       "name email phone points createdAt updatedAt"
     );
+    if (!users || users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No users found",
+      });
+    }
+
     res.status(200).json({
       success: true,
       message: "Users fetched successfully",
@@ -233,5 +245,5 @@ module.exports = {
   getRequests,
   approveRequest,
   completeRequest,
-  getAllUsers,
+  getUsers,
 };

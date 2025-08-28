@@ -21,6 +21,6 @@ router.post("/requests/:id/approve", adminController.approveRequest);
 router.post("/requests/:id/complete", adminController.completeRequest);
 
 // User management
-router.get("/users", adminController.getAllUsers);
+router.get("/users", adminController.getUsers);
 
 module.exports = router;

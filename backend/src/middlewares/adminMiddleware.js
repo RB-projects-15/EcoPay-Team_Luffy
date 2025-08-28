@@ -9,36 +9,40 @@ function adminMiddleware(req, res, next) {
   if (!authHeader) {
     return res.status(401).json({
       success: false,
-      message: "Unauthorized: No token provided or token is invalid",
+      message: "No token provided",
     });
   }
 
-  const [bearer, token] = authHeader.split(" ").map((str) => str.trim());
-  if (bearer !== "Bearer" || !token) {
+  // Extract token after 'Bearer '
+  const token = authHeader.startsWith("Bearer ")
+    ? authHeader.split(" ")[1].trim()
+    : null;
+
+  if (!token) {
     return res.status(401).json({
       success: false,
-      message: "Unauthorized: No token provided or token is invalid",
+      message: "Malformed or missing token",
     });
   }
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
+
+    // Check admin role
     if (decoded.role !== "admin") {
       return res.status(403).json({
         success: false,
         message: "Admin access required",
       });
     }
-    req.admin = decoded; // attach admin info (id, role) to request
+
+    // Attach admin info to request
+    req.admin = decoded;
     next();
   } catch (err) {
-    if (err.name === "TokenExpiredError") {
-      return res.status(401).json({ success: false, message: "Token expired" });
-    }
-    return res.status(401).json({
-      success: false,
-      message: "Unauthorized: No token provided or token is invalid",
-    });
+    const msg =
+      err.name === "TokenExpiredError" ? "Token expired" : "Invalid token";
+    return res.status(401).json({ success: false, message: msg });
   }
 }
 
