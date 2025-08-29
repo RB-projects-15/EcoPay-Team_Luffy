@@ -1,52 +1,54 @@
+// admin-frontend/src/pages/AdminRegister.jsx
 import { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import logo from "../assets/logo.png";
 
 export default function AdminRegister() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setLoading(true);
     setError("");
     setSuccess("");
-    setLoading(true);
 
     try {
-      const res = await axios.post("http://localhost:5000/api/admin/register", {
-        name,
-        email,
-        password,
-      });
+      const res = await axios.post(
+        "http://localhost:5000/api/admin/register",
+        formData
+      );
 
       if (res.status === 201) {
-        setSuccess("✅ Registration successful! Redirecting...");
+        setSuccess("✅ Registration successful! Redirecting to login...");
         setTimeout(() => {
           navigate("/admin/login");
         }, 1500);
       }
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          err.response?.data?.error ||
-          "❌ Registration failed"
-      );
+      setError(err.response?.data?.message || "❌ Registration failed");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-green-400 via-emerald-500 to-green-700">
+    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-green-400 via-emerald-500 to-green-700">
       <form
         onSubmit={handleRegister}
-        className="relative bg-white/20 backdrop-blur-xl p-10 rounded-2xl shadow-2xl w-full max-w-md border border-white/30"
+        className="bg-white/20 backdrop-blur-xl p-10 rounded-2xl shadow-2xl w-full max-w-md border border-white/30"
       >
         <div className="flex justify-center mb-6">
           <img
@@ -56,10 +58,10 @@ export default function AdminRegister() {
           />
         </div>
 
-        <h2 className="text-3xl font-extrabold text-center text-white drop-shadow-md">
+        <h2 className="text-3xl font-extrabold text-center text-white drop-shadow-md mb-2">
           Admin Register
         </h2>
-        <p className="text-white/80 mb-8 text-center text-sm">
+        <p className="text-white/80 text-center text-sm mb-6">
           Create your admin account
         </p>
 
@@ -74,52 +76,44 @@ export default function AdminRegister() {
           </p>
         )}
 
-        <div className="mb-4">
-          <label className="block mb-1 text-white font-medium">Full Name</label>
-          <input
-            type="text"
-            className="w-full border border-white/40 px-4 py-3 rounded-lg bg-white/10 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="John Doe"
-            required
-          />
-        </div>
+        <input
+          type="text"
+          name="name"
+          placeholder="Full Name"
+          value={formData.name}
+          onChange={handleChange}
+          className="w-full px-4 py-3 mb-4 rounded-lg border border-white/40 bg-white/10 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"
+          required
+        />
 
-        <div className="mb-4">
-          <label className="block mb-1 text-white font-medium">
-            Email Address
-          </label>
-          <input
-            type="email"
-            className="w-full border border-white/40 px-4 py-3 rounded-lg bg-white/10 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="example@domain.com"
-            required
-          />
-        </div>
+        <input
+          type="email"
+          name="email"
+          placeholder="Email Address"
+          value={formData.email}
+          onChange={handleChange}
+          className="w-full px-4 py-3 mb-4 rounded-lg border border-white/40 bg-white/10 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"
+          required
+        />
 
-        <div className="mb-6">
-          <label className="block mb-1 text-white font-medium">Password</label>
-          <input
-            type="password"
-            className="w-full border border-white/40 px-4 py-3 rounded-lg bg-white/10 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-          />
-        </div>
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          value={formData.password}
+          onChange={handleChange}
+          className="w-full px-4 py-3 mb-6 rounded-lg border border-white/40 bg-white/10 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"
+          required
+        />
 
         <button
           type="submit"
-          className={`w-full text-white py-3 rounded-lg font-semibold shadow-lg transition-all ${
+          disabled={loading}
+          className={`w-full py-3 rounded-lg font-semibold text-white shadow-lg transition ${
             loading
               ? "bg-gray-400 cursor-not-allowed"
               : "bg-yellow-400 hover:bg-yellow-500"
           }`}
-          disabled={loading}
         >
           {loading ? "Registering..." : "Register"}
         </button>

@@ -1,14 +1,35 @@
+// src/components/StatsCard.jsx
+import { FaRecycle, FaClock, FaCheckCircle, FaUsers } from "react-icons/fa";
+
+const iconMap = {
+  FaRecycle: FaRecycle,
+  FaClock: FaClock,
+  FaCheckCircle: FaCheckCircle,
+  FaUsers: FaUsers,
+};
+
 export default function StatsCard({
   title,
   value,
-  color = "from-green-400 to-green-600",
+  color = "bg-gray-200",
+  icon,
 }) {
+  const IconComponent = iconMap[icon] || FaRecycle;
+
   return (
     <div
-      className={`flex flex-col items-center justify-center p-6 rounded-2xl shadow-lg transform transition-transform duration-300 hover:scale-105 bg-gradient-to-br ${color}`}
+      className={`flex items-center p-6 rounded-2xl shadow-lg transition transform hover:scale-105 ${color} text-white`}
     >
-      <h3 className="text-lg font-semibold text-gray-100">{title}</h3>
-      <p className="text-3xl font-bold mt-2 text-white">{value}</p>
+      {/* Icon */}
+      <div className="p-4 bg-white/20 rounded-full mr-4">
+        <IconComponent size={28} />
+      </div>
+
+      {/* Title & Value */}
+      <div>
+        <p className="text-sm font-medium">{title}</p>
+        <p className="text-2xl font-bold">{value}</p>
+      </div>
     </div>
   );
 }

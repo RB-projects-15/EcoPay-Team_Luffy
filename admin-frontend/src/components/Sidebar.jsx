@@ -1,86 +1,62 @@
-// admin-frontend/src/components/Sidebar.jsx
-import { NavLink, useNavigate } from "react-router-dom";
+// src/components/Sidebar.jsx
+import { NavLink } from "react-router-dom";
 import {
-  LayoutDashboard,
-  Users,
-  FileBarChart2,
-  ClipboardList,
-  LogOut,
-} from "lucide-react";
+  FaTachometerAlt,
+  FaTasks,
+  FaUsers,
+  FaChartBar,
+  FaCog,
+  FaSignOutAlt,
+} from "react-icons/fa";
 import { logoutAdmin } from "../services/adminApi";
 
 export default function Sidebar() {
-  const navigate = useNavigate();
-
-  const navItem =
-    "flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-300";
-  const navActive = "bg-green-600 text-white shadow-md scale-[1.03]";
-  const navInactive =
-    "text-gray-200 hover:bg-green-500 hover:text-white hover:scale-[1.02]";
-
-  const handleLogout = () => {
-    logoutAdmin(); // clears token from localStorage
-    navigate("/admin/login"); // redirect to login page
-  };
+  const menuItems = [
+    { name: "Dashboard", path: "/admin/dashboard", icon: <FaTachometerAlt /> },
+    { name: "Requests", path: "/admin/requests", icon: <FaTasks /> },
+    { name: "Manage Users", path: "/admin/users", icon: <FaUsers /> },
+    { name: "Reports", path: "/admin/transactions", icon: <FaChartBar /> },
+    { name: "Settings", path: "/admin/settings", icon: <FaCog /> },
+  ];
 
   return (
-    <div className="w-64 bg-gradient-to-b from-green-700 to-green-900 text-white flex flex-col shadow-xl">
-      {/* Logo / Title */}
-      <div className="p-6 text-2xl font-bold border-b border-green-600 tracking-wide flex items-center gap-2">
-        <span>EcoPay Admin</span>
+    <div className="h-screen w-64 bg-gradient-to-b from-blue-600 to-blue-800 text-white flex flex-col shadow-xl">
+      {/* Logo Section */}
+      <div className="p-6 text-center border-b border-blue-500">
+        <h1 className="text-2xl font-bold tracking-wide">EcoPay Admin</h1>
+        <p className="text-sm text-blue-200">Control Panel</p>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
-        <NavLink
-          to="/admin/home/dashboard"
-          className={({ isActive }) =>
-            `${navItem} ${isActive ? navActive : navInactive}`
-          }
-        >
-          <LayoutDashboard size={20} />
-          Dashboard
-        </NavLink>
-
-        <NavLink
-          to="/admin/home/requests"
-          className={({ isActive }) =>
-            `${navItem} ${isActive ? navActive : navInactive}`
-          }
-        >
-          <ClipboardList size={20} />
-          Requests
-        </NavLink>
-
-        <NavLink
-          to="/admin/home/users"
-          className={({ isActive }) =>
-            `${navItem} ${isActive ? navActive : navInactive}`
-          }
-        >
-          <Users size={20} />
-          Manage Users
-        </NavLink>
-
-        <NavLink
-          to="/admin/home/reports"
-          className={({ isActive }) =>
-            `${navItem} ${isActive ? navActive : navInactive}`
-          }
-        >
-          <FileBarChart2 size={20} />
-          Reports
-        </NavLink>
+      {/* Menu Section */}
+      <nav className="flex-1 p-4">
+        <ul className="space-y-2">
+          {menuItems.map((item) => (
+            <li key={item.name}>
+              <NavLink
+                to={item.path}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition ${
+                    isActive
+                      ? "bg-white text-blue-700 shadow-md"
+                      : "hover:bg-blue-700"
+                  }`
+                }
+              >
+                <span className="text-lg">{item.icon}</span>
+                {item.name}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
       </nav>
 
-      {/* Footer / Logout */}
-      <div className="p-4 border-t border-green-600">
+      {/* Logout Button */}
+      <div className="p-4 border-t border-blue-500">
         <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-green-800 hover:bg-red-600 transition-all duration-300"
+          onClick={logoutAdmin}
+          className="flex items-center gap-3 w-full px-4 py-3 rounded-lg bg-red-500 hover:bg-red-600 transition text-white font-medium"
         >
-          <LogOut size={20} />
-          Logout
+          <FaSignOutAlt /> Logout
         </button>
       </div>
     </div>
