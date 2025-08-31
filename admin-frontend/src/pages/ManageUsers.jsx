@@ -1,7 +1,7 @@
 // src/pages/ManageUsers.jsx
 import { useEffect, useState } from "react";
 import { fetchUsers } from "../services/adminApi";
-import { FaSearch, FaUserAlt, FaPhone, FaEnvelope } from "react-icons/fa";
+import { FaSearch, FaUserAlt, FaStar } from "react-icons/fa";
 
 export default function ManageUsers() {
   const [users, setUsers] = useState([]);
@@ -12,7 +12,7 @@ export default function ManageUsers() {
     try {
       setLoading(true);
       const data = await fetchUsers();
-      setUsers(data?.users);
+      setUsers(data?.users || []);
     } catch (error) {
       console.error("Error fetching users:", error);
     } finally {
@@ -25,72 +25,85 @@ export default function ManageUsers() {
   }, []);
 
   // ✅ Filter by search (name, email, phone)
-  console.log(users, "---users");
-  const filteredUsers = users?.filter((u) =>
+  const filteredUsers = users.filter((u) =>
     [u.name, u.email, u.phone]
       .filter(Boolean)
       .some((field) => field.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
-    <div className="p-6 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="p-8 min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
       {/* Page Header */}
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">👥 Manage Users</h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-4xl font-bold text-gray-800 tracking-tight">
+          Manage Users
+        </h1>
+      </div>
 
-      {/* ✅ Search Bar */}
-      <div className="relative w-full md:w-1/3 mb-6">
+      {/* Search Bar */}
+      <div className="relative w-full md:w-1/3 mb-8">
         <FaSearch className="absolute left-3 top-3 text-gray-400" />
         <input
           type="text"
           placeholder="Search by name, email, or phone..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm"
         />
       </div>
 
-      {/* ✅ Users Table */}
+      {/* Users Table */}
       {loading ? (
-        <div className="text-center text-gray-500">Loading users...</div>
+        <div className="text-center text-gray-500 italic">Loading users...</div>
       ) : filteredUsers.length === 0 ? (
-        <div className="text-center text-gray-500">No users found.</div>
+        <div className="text-center text-gray-500 italic">No users found.</div>
       ) : (
-        <div className="overflow-x-auto bg-white shadow rounded-2xl">
-          <table className="min-w-full table-auto border-collapse">
+        <div className="overflow-x-auto bg-white shadow-xl rounded-2xl border border-gray-100">
+          <table className="min-w-full table-auto">
             <thead>
-              <tr className="bg-gray-100 text-left">
-                <th className="p-4 text-sm font-semibold text-gray-600">
-                  Name
-                </th>
-                <th className="p-4 text-sm font-semibold text-gray-600">
-                  Email
-                </th>
-                <th className="p-4 text-sm font-semibold text-gray-600">
-                  Phone
-                </th>
-                <th className="p-4 text-sm font-semibold text-gray-600">
+              <tr className="bg-gradient-to-r from-blue-50 to-blue-100 text-gray-700">
+                <th className="p-4 text-sm font-semibold text-left">Name</th>
+                <th className="p-4 text-sm font-semibold text-left">Email</th>
+                <th className="p-4 text-sm font-semibold text-left">Phone</th>
+                <th className="p-4 text-sm font-semibold text-center">
                   Total Requests
                 </th>
-                <th className="p-4 text-sm font-semibold text-gray-600">
-                  Joined
+                <th className="p-4 text-sm font-semibold text-center">
+                  Points
                 </th>
+                <th className="p-4 text-sm font-semibold text-left">Joined</th>
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((user) => (
-                <tr key={user._id} className="border-t hover:bg-gray-50">
-                  <td className="p-4 flex items-center gap-2">
-                    <FaUserAlt className="text-gray-400" /> {user.name || "N/A"}
+              {filteredUsers.map((user, index) => (
+                <tr
+                  key={user._id}
+                  className={`${
+                    index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                  } hover:bg-blue-50 transition-colors`}
+                >
+                  {/* Name */}
+                  <td className="p-4 flex items-center gap-2 text-gray-700 font-medium">
+                    <FaUserAlt className="text-blue-500" />
+                    {user.name || "N/A"}
                   </td>
-                  <td className="p-4 flex items-center gap-2">
-                    <FaEnvelope className="text-gray-400" />{" "}
-                    {user.email || "N/A"}
+
+                  {/* Email & Phone */}
+                  <td className="p-4 text-gray-600">{user.email || "N/A"}</td>
+                  <td className="p-4 text-gray-600">{user.phone || "N/A"}</td>
+
+                  {/* Total Requests */}
+                  <td className="p-4 text-center font-semibold text-gray-800">
+                    {user.totalRequests ?? user.requests?.length ?? 0}
                   </td>
-                  <td className="p-4 flex items-center gap-2">
-                    <FaPhone className="text-gray-400" /> {user.phone || "N/A"}
+
+                  {/* Points */}
+                  <td className="p-4 text-center font-semibold text-yellow-600 flex items-center justify-center gap-1">
+                    <FaStar /> {user.points ?? 0}
                   </td>
-                  <td className="p-4 text-center">{user.totalRequests || 0}</td>
-                  <td className="p-4">
+
+                  {/* Joined */}
+                  <td className="p-4 text-gray-600">
                     {user.createdAt
                       ? new Date(user.createdAt).toLocaleDateString()
                       : "-"}

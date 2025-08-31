@@ -6,9 +6,7 @@ import {
   FaUsers,
   FaChartBar,
   FaCog,
-  FaSignOutAlt,
 } from "react-icons/fa";
-import { logoutAdmin } from "../services/adminApi";
 
 export default function Sidebar() {
   const menuItems = [
@@ -35,7 +33,7 @@ export default function Sidebar() {
               <NavLink
                 to={item.path}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition ${
+                  `flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
                     isActive
                       ? "bg-white text-blue-700 shadow-md"
                       : "hover:bg-blue-700"
@@ -49,16 +47,6 @@ export default function Sidebar() {
           ))}
         </ul>
       </nav>
-
-      {/* Logout Button */}
-      <div className="p-4 border-t border-blue-500">
-        <button
-          onClick={logoutAdmin}
-          className="flex items-center gap-3 w-full px-4 py-3 rounded-lg bg-red-500 hover:bg-red-600 transition text-white font-medium"
-        >
-          <FaSignOutAlt /> Logout
-        </button>
-      </div>
     </div>
   );
 }

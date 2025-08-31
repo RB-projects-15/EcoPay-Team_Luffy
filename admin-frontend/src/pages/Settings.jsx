@@ -1,45 +1,36 @@
 // src/pages/Settings.jsx
 import { useEffect, useState } from "react";
 import { logoutAdmin } from "../services/adminApi";
-import axios from "axios";
 import { FaUserShield, FaEnvelope, FaSignOutAlt, FaCog } from "react-icons/fa";
 
 export default function Settings() {
   const [admin, setAdmin] = useState(null);
-  const [loading, setLoading] = useState(true);
 
-  // ✅ Fetch logged-in admin details
-  const fetchAdminDetails = async () => {
-    try {
-      const token = localStorage.getItem("adminToken");
-      const res = await axios.get("http://localhost:5000/api/admin/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setAdmin(res.data);
-    } catch (err) {
-      console.error("Error fetching admin details:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // ✅ Load admin details from localStorage instead of calling /me
   useEffect(() => {
-    fetchAdminDetails();
+    const storedAdmin = localStorage.getItem("admin");
+    if (storedAdmin) {
+      try {
+        setAdmin(JSON.parse(storedAdmin));
+      } catch (err) {
+        console.error("Error parsing admin from localStorage:", err);
+      }
+    }
   }, []);
 
   return (
     <div className="p-6 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">⚙️ Settings</h1>
 
-      {loading ? (
-        <div className="text-gray-500">Loading settings...</div>
-      ) : !admin ? (
-        <div className="text-red-500">Failed to load admin details.</div>
+      {!admin ? (
+        <div className="text-red-500">
+          No admin details found. Please login again.
+        </div>
       ) : (
         <div className="space-y-6">
           {/* ✅ Profile Card */}
           <div className="bg-white shadow rounded-2xl p-6 flex items-center gap-6">
-            <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-3xl font-bold">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center text-white text-3xl font-bold shadow-md">
               {admin.name?.charAt(0).toUpperCase() || "A"}
             </div>
             <div>
@@ -51,7 +42,9 @@ export default function Settings() {
               </p>
               <p className="text-sm text-gray-400 mt-1">
                 Role:{" "}
-                <span className="font-medium">{admin.role || "Admin"}</span>
+                <span className="font-medium text-gray-600">
+                  {admin.role || "Admin"}
+                </span>
               </p>
             </div>
           </div>

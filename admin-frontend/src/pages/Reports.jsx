@@ -22,7 +22,11 @@ export default function Reports() {
     try {
       setLoading(true);
       const data = await fetchReports();
-      setReports(data?.reports);
+
+      console.log("📊 API Response:", data); // 👈 Check actual API response
+
+      // Adjust this line based on actual backend response
+      setReports(data?.reports || data?.requests || data?.wasteRequests || []);
     } catch (err) {
       console.error("Error fetching reports:", err);
     } finally {

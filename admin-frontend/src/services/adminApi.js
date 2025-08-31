@@ -50,21 +50,26 @@ export const completeRequest = async (id) => {
 };
 
 // ---- Dashboard Stats ----
+// adminApi.js
 export const fetchRequestStats = async () => {
-  try {
-    const res = await API.get("/requests");
-    const requests = res.data;
+  const res = await API.get("/requests");
 
-    return {
-      total: requests.length,
-      pending: requests.filter((r) => r.status === "pending").length,
-      approved: requests.filter((r) => r.status === "approved").length,
-      completed: requests.filter((r) => r.status === "completed").length,
-    };
-  } catch (error) {
-    console.error("Failed to fetch request stats:", error);
-    return { total: 0, pending: 0, approved: 0, completed: 0 };
-  }
+  // ✅ Support nested structure
+  const requests = res.data.requests || res.data;
+
+  // ✅ Make status comparison case-insensitive
+  const total = requests.length;
+  const pending = requests.filter(
+    (r) => r.status?.toLowerCase() === "pending"
+  ).length;
+  const approved = requests.filter(
+    (r) => r.status?.toLowerCase() === "approved"
+  ).length;
+  const completed = requests.filter(
+    (r) => r.status?.toLowerCase() === "completed"
+  ).length;
+
+  return { total, pending, approved, completed };
 };
 
 // ---- Users (Manage Users page) ----
