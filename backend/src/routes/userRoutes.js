@@ -24,19 +24,20 @@ router.post("/login", login);
 // ----------------- USER-PROTECTED ROUTES -----------------
 router.use(authMiddleware); // 🔒 All routes below need JWT
 
-// Submit waste request with file upload
+// ✅ Submit waste request with file upload (points calculated dynamically in controller)
 router.post("/waste/submit", upload.single("image"), submitWaste);
 
 // Get user transactions (from JWT, no need user_id in params)
 router.get("/transactions", authMiddleware, getTransactions);
+
 // Redeem rewards
 router.get("/rewards", authMiddleware, getRewards); // list all rewards
 router.post("/rewards/redeem", redeemReward);
 
 // Get all requests of logged-in user
 router.get("/my-requests", authMiddleware, userController.getMyRequests);
-// Get specific waste request by ID
 
+// Get specific waste request by ID
 router.get("/waste/:id", async (req, res) => {
   try {
     const request = await WasteRequest.findById(req.params.id);

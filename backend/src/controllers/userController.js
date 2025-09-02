@@ -108,22 +108,40 @@ exports.submitWaste = async (req, res) => {
         .json({ success: false, message: "User not found" });
     }
 
-    // Create waste request
+    // ✅ Waste points mapping (for later calculation)
+    const pointsPerKg = {
+      Iron: 45,
+      Plastic: 30,
+      Paper: 25,
+      Glass: 30,
+    };
+
+    // Validate waste type
+    if (!pointsPerKg[waste_type]) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid waste type provided",
+      });
+    }
+
+    // Store waste request WITHOUT awarding points
     const wasteRequest = new WasteRequest({
-      user: req.user.id, // ✅ Must match schema
+      user: req.user.id,
       user_name: user.name,
       phone,
       waste_type,
       weight,
       location,
       image_url: `/uploads/${req.file.filename}`,
+      status: "pending", // ✅ default status
     });
 
     await wasteRequest.save();
 
     res.status(201).json({
       success: true,
-      message: "Waste request submitted successfully",
+      message:
+        "Waste request submitted successfully. Points will be awarded after completion.",
       wasteRequest,
     });
   } catch (error) {
@@ -131,7 +149,7 @@ exports.submitWaste = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Something went wrong. Please try again later.",
-      error: error.message, // optional: include for debugging
+      error: error.message,
     });
   }
 };
@@ -139,8 +157,10 @@ exports.submitWaste = async (req, res) => {
 // ===== Get Transactions =====
 exports.getTransactions = async (req, res) => {
   try {
-    // Fetch transactions for the logged-in user
-    const transactions = await Transaction.find({ user_id: req.user.id });
+    // Fetch transactions for the logged-in user and populate related waste request
+    const transactions = await Transaction.find({ user_id: req.user.id })
+      .sort({ createdAt: -1 })
+      .lean(); // lean() for plain JS objects
 
     if (!transactions.length) {
       return res.status(404).json({
@@ -149,10 +169,36 @@ exports.getTransactions = async (req, res) => {
       });
     }
 
+    // Fetch related waste requests for 'Completed waste request' transactions
+    const wasteRequestIds = transactions
+      .filter((tx) => tx.description.includes("Waste request"))
+      .map((tx) => tx.waste_request_id)
+      .filter(Boolean);
+
+    let wasteRequestsMap = {};
+    if (wasteRequestIds.length) {
+      const wasteRequests = await WasteRequest.find({
+        _id: { $in: wasteRequestIds },
+      }).lean();
+
+      wasteRequestsMap = wasteRequests.reduce((acc, wr) => {
+        acc[wr._id] = wr;
+        return acc;
+      }, {});
+    }
+
+    // Attach waste request details to transactions
+    const detailedTransactions = transactions.map((tx) => ({
+      ...tx,
+      waste_request: tx.waste_request_id
+        ? wasteRequestsMap[tx.waste_request_id]
+        : null,
+    }));
+
     res.json({
       success: true,
       message: "Transactions fetched successfully",
-      transactions,
+      transactions: detailedTransactions,
     });
   } catch (err) {
     console.error("Get Transactions Error:", err);

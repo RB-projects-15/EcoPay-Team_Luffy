@@ -149,7 +149,7 @@ export default function AccountDrawer({ isOpen, onClose }) {
               </button>
 
               <button
-                onClick={() => navigate("/my-transactions")}
+                onClick={() => navigate("/transactions")}
                 className="flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-white rounded-xl shadow hover:scale-105 transition transform font-medium"
               >
                 <FaListAlt /> My Transactions

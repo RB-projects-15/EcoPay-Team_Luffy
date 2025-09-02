@@ -1,12 +1,20 @@
 // src/pages/MyTransactions.jsx
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { FaArrowUp, FaArrowDown } from "react-icons/fa";
+import {
+  FaArrowUp,
+  FaArrowDown,
+  FaChevronDown,
+  FaChevronUp,
+  FaPhone,
+  FaMapMarkerAlt,
+} from "react-icons/fa";
 
 export default function MyTransactions() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [expanded, setExpanded] = useState({}); // track expanded cards
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -32,6 +40,15 @@ export default function MyTransactions() {
     fetchTransactions();
   }, []);
 
+  const toggleExpand = (id) => {
+    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    alert(`Copied to clipboard: ${text}`);
+  };
+
   if (loading)
     return <p className="text-center text-gray-500 mt-10">Loading...</p>;
 
@@ -52,22 +69,95 @@ export default function MyTransactions() {
               key={tx._id}
               className="bg-white shadow-lg rounded-xl p-5 flex flex-col justify-between hover:shadow-xl transition-shadow duration-300"
             >
-              <div className="flex items-center justify-between mb-2">
+              {/* Header */}
+              <div
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => toggleExpand(tx._id)}
+              >
                 <h2 className="text-lg font-semibold text-gray-800">
                   {tx.description}
                 </h2>
-                <span
-                  className={`flex items-center gap-1 font-bold text-sm ${
-                    tx.type === "credit" ? "text-green-600" : "text-red-600"
-                  }`}
-                >
-                  {tx.type === "credit" ? <FaArrowUp /> : <FaArrowDown />}
-                  {tx.points} pts
-                </span>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`flex items-center gap-1 font-bold text-sm ${
+                      tx.type === "credit" ? "text-green-600" : "text-red-600"
+                    }`}
+                  >
+                    {tx.type === "credit" ? <FaArrowUp /> : <FaArrowDown />}
+                    {tx.points} pts
+                  </span>
+                  {expanded[tx._id] ? <FaChevronUp /> : <FaChevronDown />}
+                </div>
               </div>
-              <p className="text-gray-500 text-sm">
+
+              {/* Date */}
+              <p className="text-gray-500 text-sm mt-1">
                 {new Date(tx.createdAt).toLocaleString()}
               </p>
+
+              {/* Collapsible content */}
+              {expanded[tx._id] && (
+                <div className="mt-3 border-t pt-3 text-gray-700 text-sm space-y-2">
+                  {/* Show waste request details if available */}
+                  {tx.waste_request ? (
+                    <div className="bg-gray-50 p-3 rounded-lg space-y-2">
+                      <p>
+                        <strong>Waste Type:</strong>{" "}
+                        {tx.waste_request.waste_type}
+                      </p>
+                      <p>
+                        <strong>Weight:</strong> {tx.waste_request.weight} kg
+                      </p>
+                      <p className="flex items-center gap-1">
+                        <FaMapMarkerAlt className="text-red-500" />
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                            tx.waste_request.location
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline text-blue-600 hover:text-blue-800"
+                        >
+                          {tx.waste_request.location}
+                        </a>
+                      </p>
+                      <p className="flex items-center gap-1">
+                        <FaPhone className="text-green-500" />
+                        {tx.waste_request.collector_info || "Not assigned"}
+                        {tx.waste_request.collector_info && (
+                          <button
+                            className="ml-2 px-2 py-0.5 bg-gray-200 rounded text-xs hover:bg-gray-300"
+                            onClick={() =>
+                              copyToClipboard(tx.waste_request.collector_info)
+                            }
+                          >
+                            Copy
+                          </button>
+                        )}
+                      </p>
+                      <p>
+                        <strong>Collection Time:</strong>{" "}
+                        {tx.waste_request.collection_time
+                          ? new Date(
+                              tx.waste_request.collection_time
+                            ).toLocaleString()
+                          : "Not scheduled"}
+                      </p>
+                      {tx.waste_request.image_url && (
+                        <img
+                          src={`http://localhost:5000${tx.waste_request.image_url}`}
+                          alt="Waste"
+                          className="w-full h-40 object-cover rounded-lg mt-2"
+                        />
+                      )}
+                    </div>
+                  ) : (
+                    <p>No additional details</p>
+                  )}
+                </div>
+              )}
+
+              {/* Transaction type badge */}
               <span
                 className={`mt-3 inline-block px-3 py-1 rounded-full text-xs font-medium ${
                   tx.type === "credit"

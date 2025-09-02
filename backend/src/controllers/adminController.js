@@ -136,8 +136,15 @@ const approveRequest = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Waste request not found" });
 
+    // Update request status and collector info
     request.status = "approved";
     request.collector_info = req.body.collector_info;
+
+    // Calculate collection time (5 hours after submission)
+    const collectionTime = new Date(request.createdAt);
+    collectionTime.setHours(collectionTime.getHours() + 5);
+    request.collection_time = collectionTime;
+
     await request.save();
 
     res.status(200).json({
@@ -157,49 +164,80 @@ const approveRequest = async (req, res) => {
 // ===== Complete Request =====
 const completeRequest = async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return res
         .status(400)
         .json({ success: false, message: "Invalid request ID" });
     }
 
-    const { points } = req.body;
-    if (typeof points !== "number" || points <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Points value is required and must be positive",
-      });
-    }
-
-    const request = await WasteRequest.findById(req.params.id).populate("user");
+    // Fetch request and populate user
+    const request = await WasteRequest.findById(id).populate("user");
     if (!request) {
       return res
         .status(404)
         .json({ success: false, message: "Waste request not found" });
     }
 
+    // Ensure request is approved before completing
+    if (request.status !== "approved") {
+      return res.status(400).json({
+        success: false,
+        message: "Only approved requests can be marked as completed",
+      });
+    }
+
+    // Dynamic points calculation based on waste type
+    const pointsPerKg = {
+      Iron: 45,
+      Plastic: 30,
+      Paper: 25,
+      Glass: 30,
+    };
+    const points = (pointsPerKg[request.waste_type] || 0) * request.weight;
+
     // Mark request as completed
     request.status = "completed";
-    request.points_credited = points;
+    request.points = points;
+
+    // Use previously set collection_time or set now
+    request.collection_time = request.collection_time || new Date();
+
     await request.save();
 
-    // Create transaction according to schema
+    // Credit points via transaction
     const transaction = new Transaction({
-      user_id: request.user._id, // must match schema
+      user_id: request.user._id,
       points,
-      type: "credit", // mandatory
-      description: "Completed waste request",
+      type: "credit",
+      description: "Points credited for completed waste request",
+      waste_request_id: request._id, // <--- add this
     });
     await transaction.save();
 
-    // Update user points
+    // Update user's total points
     request.user.points = (request.user.points || 0) + points;
     await request.user.save();
 
     res.status(200).json({
       success: true,
-      message: "Waste pickup request completed and points credited",
-      request,
+      message: "Waste pickup request marked as completed and points credited",
+      request: {
+        _id: request._id,
+        user: request.user._id,
+        user_name: request.user_name,
+        phone: request.phone,
+        waste_type: request.waste_type,
+        weight: request.weight,
+        location: request.location,
+        image_url: request.image_url,
+        status: request.status,
+        collector_info: request.collector_info,
+        collection_time: request.collection_time,
+        points: request.points,
+        createdAt: request.createdAt,
+        updatedAt: request.updatedAt,
+      },
       transaction,
     });
   } catch (err) {

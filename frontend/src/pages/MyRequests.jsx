@@ -1,3 +1,4 @@
+// src/pages/MyRequests.jsx
 import { useEffect, useState } from "react";
 import axios from "axios";
 import {
@@ -11,13 +12,15 @@ import {
   FaCheckCircle,
   FaHourglassHalf,
   FaTimesCircle,
+  FaCoins,
 } from "react-icons/fa";
 
 export default function MyRequests() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selected, setSelected] = useState(null); // for modal
+  const [selected, setSelected] = useState(null);
+  const [timers, setTimers] = useState({}); // countdown timers
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -32,6 +35,15 @@ export default function MyRequests() {
 
         if (res.data.success) {
           setRequests(res.data.requests);
+
+          // Initialize countdown timers for approved requests
+          const approvedTimers = {};
+          res.data.requests.forEach((req) => {
+            if (req.collection_time && req.status === "approved") {
+              approvedTimers[req._id] = calculateCountdown(req.collection_time);
+            }
+          });
+          setTimers(approvedTimers);
         } else {
           setError(res.data.message || "Failed to fetch requests");
         }
@@ -44,6 +56,30 @@ export default function MyRequests() {
 
     fetchRequests();
   }, []);
+
+  // Countdown timer updater
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const updatedTimers = { ...timers };
+      requests.forEach((req) => {
+        if (req.collection_time && req.status === "approved") {
+          updatedTimers[req._id] = calculateCountdown(req.collection_time);
+        }
+      });
+      setTimers(updatedTimers);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [requests, timers]);
+
+  const calculateCountdown = (time) => {
+    const diff = new Date(time) - new Date();
+    if (diff <= 0) return "Collection time arrived!";
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    return `${hours}h ${minutes}m ${seconds}s`;
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -67,7 +103,7 @@ export default function MyRequests() {
       case "rejected":
         return <FaTimesCircle className="text-red-600" />;
       default:
-        return <FaHourglassHalf className="text-yellow-600" />; // pending
+        return <FaHourglassHalf className="text-yellow-600" />;
     }
   };
 
@@ -112,9 +148,21 @@ export default function MyRequests() {
                   <FaWeight className="mr-2 text-gray-500" /> {req.weight} kg
                 </p>
                 <p className="flex items-center text-gray-700">
+                  <FaCoins className="mr-2 text-yellow-500" /> {req.points || 0}{" "}
+                  pts
+                </p>
+                <p className="flex items-center text-gray-700">
                   <FaMapMarkerAlt className="mr-2 text-red-500" />{" "}
                   {req.location}
                 </p>
+
+                {/* Countdown */}
+                {req.status === "approved" && req.collection_time && (
+                  <p className="text-blue-600 font-semibold">
+                    🕒 Collection in: {timers[req._id] || "--"}
+                  </p>
+                )}
+
                 <p className="flex items-center text-gray-500 text-sm">
                   <FaClock className="mr-2" />{" "}
                   {new Date(req.createdAt).toLocaleDateString()}
@@ -132,7 +180,7 @@ export default function MyRequests() {
         </div>
       )}
 
-      {/* Modal for details */}
+      {/* Modal */}
       {selected && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
           <div className="bg-white rounded-2xl shadow-2xl w-11/12 md:w-2/3 lg:w-1/2 p-6 relative">
@@ -161,6 +209,10 @@ export default function MyRequests() {
                 <FaWeight className="mr-2 text-gray-500" /> {selected.weight} kg
               </p>
               <p className="flex items-center text-gray-700">
+                <FaCoins className="mr-2 text-yellow-500" />{" "}
+                {selected.points || 0} pts
+              </p>
+              <p className="flex items-center text-gray-700">
                 <FaMapMarkerAlt className="mr-2 text-red-500" />{" "}
                 {selected.location}
               </p>
@@ -182,9 +234,17 @@ export default function MyRequests() {
                 <FaClock className="mr-2" />{" "}
                 {new Date(selected.createdAt).toLocaleString()}
               </p>
+
+              {/* Countdown in modal */}
+              {selected.status === "approved" && selected.collection_time && (
+                <p className="text-blue-600 font-semibold">
+                  🕒 Collection in:{" "}
+                  {calculateCountdown(selected.collection_time)}
+                </p>
+              )}
             </div>
 
-            {/* Timeline / Status Tracker */}
+            {/* Status Timeline */}
             <div className="border-t pt-4">
               <h3 className="text-lg font-semibold mb-3">Status Timeline</h3>
               <div className="flex items-center justify-between">
@@ -205,7 +265,6 @@ export default function MyRequests() {
                       {getStatusIcon(stage)}
                     </div>
                     <p className="text-sm mt-2 capitalize">{stage}</p>
-
                     {idx < 2 && (
                       <div
                         className={`absolute top-5 right-0 w-full h-1 ${

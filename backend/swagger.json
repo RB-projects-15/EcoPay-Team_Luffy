@@ -195,8 +195,8 @@
 },
 "/api/user/waste/submit": {
   "post": {
-    "summary": "Submit waste pickup request with image",
-    "description": "Authenticated users can submit a waste pickup request. User ID and name are auto-attached from JWT.",
+    "summary": "Submit waste pickup request with image and auto-calculated points",
+    "description": "Authenticated users can submit a waste pickup request. User ID and name are auto-attached from JWT. Points are dynamically calculated based on waste type and weight.",
     "tags": ["User"],
     "security": [{ "bearerAuth": [] }],
     "requestBody": {
@@ -206,22 +206,54 @@
           "schema": {
             "type": "object",
             "properties": {
-              "waste_type": { "type": "string", "enum": ["Plastic","Paper","Glass","Organic"], "example": "Plastic" },
-              "weight": { "type": "number", "example": 5 },
+              "waste_type": { 
+                "type": "string", 
+                "enum": ["Plastic", "Paper", "Glass", "Iron"], 
+                "example": "Plastic",
+                "description": "Waste type. Points awarded per kg: Iron=45, Plastic=30, Paper=25, Glass=30"
+              },
+              "weight": { 
+                "type": "number", 
+                "example": 5,
+                "description": "Weight in kilograms. Points = weight * points_per_kg"
+              },
               "location": { "type": "string", "example": "Lovely building Baina, Vasco Goa" },
               "phone": { "type": "string", "example": "9876543210" },
               "image": { "type": "string", "format": "binary", "description": "Waste image (PNG/JPG)" }
             },
-            "required": ["waste_type","weight","location","phone","image"]
+            "required": ["waste_type", "weight", "location", "phone", "image"]
           }
         }
       }
     },
     "responses": {
       "201": {
-        "description": "Waste request submitted successfully",
+        "description": "Waste request submitted successfully with points awarded",
         "content": {
           "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": { "type": "boolean", "example": true },
+                "message": { "type": "string", "example": "Waste request submitted successfully" },
+                "wasteRequest": {
+                  "type": "object",
+                  "properties": {
+                    "_id": { "type": "string", "example": "66d2a3b2c9a8f8e2d1234567" },
+                    "user": { "type": "string", "example": "66c2e7b1b9a8f8e2d9876543" },
+                    "user_name": { "type": "string", "example": "Riya" },
+                    "waste_type": { "type": "string", "example": "Plastic" },
+                    "weight": { "type": "number", "example": 5 },
+                    "points": { "type": "number", "example": 150, "description": "Points awarded = weight * rate_per_kg" },
+                    "location": { "type": "string", "example": "Lovely building Baina, Vasco Goa" },
+                    "phone": { "type": "string", "example": "9876543210" },
+                    "image_url": { "type": "string", "example": "/uploads/waste123.png" },
+                    "status": { "type": "string", "example": "pending" },
+                    "createdAt": { "type": "string", "format": "date-time", "example": "2025-08-26T12:34:56.000Z" }
+                  }
+                }
+              }
+            },
             "example": {
               "success": true,
               "message": "Waste request submitted successfully",
@@ -231,6 +263,7 @@
                 "user_name": "Riya",
                 "waste_type": "Plastic",
                 "weight": 5,
+                "points": 150,
                 "location": "Lovely building Baina, Vasco Goa",
                 "phone": "9876543210",
                 "image_url": "/uploads/waste123.png",
@@ -280,10 +313,11 @@
     }
   }
 },
+
 "/api/user/waste": {
   "get": {
     "summary": "Get all waste requests of the logged-in user",
-    "description": "Authenticated users can fetch all their waste requests.",
+    "description": "Authenticated users can fetch all their waste requests. Points awarded per request are included.",
     "tags": ["User"],
     "security": [{ "bearerAuth": [] }],
     "responses": {
@@ -299,9 +333,19 @@
                   "_id": "66c2e7b1f2a4b6001f8e5678",
                   "waste_type": "Plastic",
                   "weight": 5,
+                  "points": 150,
                   "location": "Lovely building Baina, Vasco Goa",
                   "status": "pending",
                   "createdAt": "2025-08-26T12:34:56.000Z"
+                },
+                {
+                  "_id": "66c2e7b1f2a4b6001f8e5679",
+                  "waste_type": "Iron",
+                  "weight": 2,
+                  "points": 90,
+                  "location": "Green Park, Vasco Goa",
+                  "status": "approved",
+                  "createdAt": "2025-08-27T09:20:30.000Z"
                 }
               ]
             }
@@ -333,6 +377,7 @@
     }
   }
 },
+
 
 "/api/user/transactions": {
   "get": {
@@ -866,7 +911,10 @@
           "schema": {
             "type": "object",
             "properties": {
-              "collector_info": { "type": "string", "example": "Rahul (Truck GJ-01-1234)" }
+              "collector_info": {
+                "type": "string",
+                "example": "Rahul (Truck GJ-01-1234)"
+              }
             },
             "required": ["collector_info"]
           }
@@ -884,7 +932,8 @@
               "request": {
                 "_id": "66c2e7b1f2a4b6001f8e5678",
                 "status": "approved",
-                "collector_info": "Rahul (Truck GJ-01-1234)"
+                "collector_info": "Collector Rahul - +919876543210",
+                "collection_time": "2025-08-26T17:34:56.000Z"
               }
             }
           }
@@ -926,9 +975,10 @@
     }
   }
 },
+
 "/api/admin/requests/{id}/complete": {
   "post": {
-    "summary": "Mark a waste pickup request as completed and credit points",
+    "summary": "Mark a waste pickup request as completed and credit points dynamically based on waste type",
     "tags": ["Admin"],
     "security": [{ "bearerAuth": [] }],
     "parameters": [
@@ -941,22 +991,19 @@
       }
     ],
     "requestBody": {
-      "required": true,
+      "required": false,
       "content": {
         "application/json": {
           "schema": {
             "type": "object",
-            "properties": {
-              "points": { "type": "number", "example": 20 }
-            },
-            "required": ["points"]
+            "description": "No body needed, points are calculated automatically"
           }
         }
       }
     },
     "responses": {
       "200": {
-        "description": "Request completed successfully and points credited",
+        "description": "Request completed successfully and points credited dynamically",
         "content": {
           "application/json": {
             "example": {
@@ -973,21 +1020,11 @@
                 "image_url": "https://example.com/image.jpg",
                 "status": "completed",
                 "collector_info": "Collector Rahul - +919876543210",
-                "points_credited": 20,
+                "collection_time": "2025-08-27T17:00:00.000Z",
+                "points": 150,
                 "createdAt": "2025-08-20T10:15:00.000Z",
                 "updatedAt": "2025-08-27T12:30:00.000Z"
               }
-            }
-          }
-        }
-      },
-      "400": {
-        "description": "Validation error",
-        "content": {
-          "application/json": {
-            "example": {
-              "success": false,
-              "message": "Points value is required"
             }
           }
         }
@@ -1017,6 +1054,8 @@
     }
   }
 },
+
+
 
 "/api/admin/users": {
   "get": {

@@ -1,5 +1,5 @@
 // src/pages/WasteSubmit.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 
@@ -16,6 +16,27 @@ export default function WasteSubmit() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [calculatedPoints, setCalculatedPoints] = useState(0);
+
+  // Points mapping
+  const pointsPerKg = {
+    Iron: 45,
+    Plastic: 30,
+    Paper: 25,
+    Glass: 30,
+    Organic: 0, // optional if Organic gives no points
+  };
+
+  // Calculate points whenever weight or waste type changes
+  useEffect(() => {
+    const weight = parseFloat(form.weight);
+    const rate = pointsPerKg[form.waste_type] || 0;
+    if (weight > 0 && rate > 0) {
+      setCalculatedPoints(weight * rate);
+    } else {
+      setCalculatedPoints(0);
+    }
+  }, [form.waste_type, form.weight]);
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -96,6 +117,7 @@ export default function WasteSubmit() {
         image: null,
       });
       setPreview(null);
+      setCalculatedPoints(0);
 
       // Update user points if backend returns updated user
       if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
@@ -143,6 +165,7 @@ export default function WasteSubmit() {
             <option value="Plastic">Plastic</option>
             <option value="Paper">Paper</option>
             <option value="Glass">Glass</option>
+            <option value="Iron">Iron</option>
             <option value="Organic">Organic</option>
           </select>
 
@@ -156,6 +179,13 @@ export default function WasteSubmit() {
             min={0.1}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 text-base"
           />
+
+          {/* Display calculated points dynamically */}
+          {form.waste_type && form.weight && calculatedPoints > 0 && (
+            <p className="text-center text-green-700 font-semibold">
+              Points to be awarded: {calculatedPoints}
+            </p>
+          )}
 
           <input
             type="text"

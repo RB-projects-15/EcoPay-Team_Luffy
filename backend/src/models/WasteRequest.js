@@ -8,10 +8,11 @@ const WasteRequestSchema = new mongoose.Schema(
     phone: { type: String, required: true },
     waste_type: {
       type: String,
-      enum: ["Plastic", "Paper", "Glass", "Organic"],
+      enum: ["Plastic", "Paper", "Glass", "Iron"], // ✅ Added Iron
       required: true,
     },
     weight: { type: Number, required: true },
+    points: { type: Number, default: 0 }, // ✅ renamed points_credited → points
     location: { type: String, required: true },
     image_url: { type: String, required: true },
     status: {
@@ -20,7 +21,7 @@ const WasteRequestSchema = new mongoose.Schema(
       default: "pending",
     },
     collector_info: { type: String, default: null },
-    points_credited: { type: Number, default: 0 },
+    collection_time: { type: Date, default: null }, // ✅ New field: time scheduled for collection
   },
   { timestamps: true }
 );
