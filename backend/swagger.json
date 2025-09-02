@@ -280,94 +280,60 @@
     }
   }
 },
-"/api/user/waste/{id}": {
-      "get": {
-        "summary": "Get specific waste request by ID",
-        "description": "Authenticated users can fetch details of a waste request by its ID. Users should only be able to access their own requests.",
-        "tags": ["User"],
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string" },
-            "description": "The unique ID of the waste request"
+"/api/user/waste": {
+  "get": {
+    "summary": "Get all waste requests of the logged-in user",
+    "description": "Authenticated users can fetch all their waste requests.",
+    "tags": ["User"],
+    "security": [{ "bearerAuth": [] }],
+    "responses": {
+      "200": {
+        "description": "User requests retrieved successfully",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": true,
+              "message": "User requests fetched successfully",
+              "requests": [
+                {
+                  "_id": "66c2e7b1f2a4b6001f8e5678",
+                  "waste_type": "Plastic",
+                  "weight": 5,
+                  "location": "Lovely building Baina, Vasco Goa",
+                  "status": "pending",
+                  "createdAt": "2025-08-26T12:34:56.000Z"
+                }
+              ]
+            }
           }
-        ],
-        "responses": {
-          "200": {
-            "description": "Waste request details retrieved successfully",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": true,
-                  "message": "Waste request fetched successfully",
-                  "wasteRequest": {
-                    "_id": "66c2e7b1f2a4b6001f8e5678",
-                    "user": "66c2e7b1b9a8f8e2d1234567",
-                    "user_name": "Riya",
-                    "waste_type": "Plastic",
-                    "weight": 5,
-                    "location": "Lovely building Baina, Vasco Goa",
-                    "phone": "9876543210",
-                    "image_url": "/uploads/test.png",
-                    "status": "pending",
-                    "collector_info": null,
-                    "createdAt": "2025-08-26T12:34:56.000Z",
-                    "updatedAt": "2025-08-26T12:34:56.000Z"
-                  }
-                }
-              }
+        }
+      },
+      "401": {
+        "description": "Unauthorized - No or invalid JWT provided",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Unauthorized: No token provided or token is invalid"
             }
-          },
-          "400": {
-            "description": "Invalid request ID format",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "message": "Invalid request ID format"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized - No or invalid JWT provided",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "message": "Unauthorized: No token provided or token is invalid"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Waste request not found",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "message": "Waste request not found"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": false,
-                  "message": "Something went wrong. Please try again later."
-                }
-              }
+          }
+        }
+      },
+      "500": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Something went wrong. Please try again later."
             }
           }
         }
       }
-    },
+    }
+  }
+},
+
 "/api/user/transactions": {
   "get": {
     "summary": "Get all transactions for the logged-in user",

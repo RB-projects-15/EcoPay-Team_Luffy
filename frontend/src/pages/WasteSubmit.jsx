@@ -1,342 +1,226 @@
 // src/pages/WasteSubmit.jsx
-import { useState, useRef } from "react";
-import {
-  FaCamera,
-  FaTrash,
-  FaMapMarkerAlt,
-  FaArrowLeft,
-  FaStickyNote,
-  FaPhone,
-} from "react-icons/fa";
-import {
-  GoogleMap,
-  Marker,
-  useJsApiLoader,
-  Autocomplete,
-} from "@react-google-maps/api";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import logo from "../assets/logo.png";
 
 export default function WasteSubmit() {
-  const [file, setFile] = useState(null);
-  const [previewURL, setPreviewURL] = useState(null);
-  const [fileName, setFileName] = useState("");
-  const [wasteType, setWasteType] = useState("");
-  const [quantity, setQuantity] = useState("");
-  const [location, setLocation] = useState("");
-  const [coords, setCoords] = useState({ lat: 20.5937, lng: 78.9629 });
-  const [placeName, setPlaceName] = useState("");
-  const [notes, setNotes] = useState("");
-  const [countryCode, setCountryCode] = useState("+91");
-  const [phone, setPhone] = useState("");
-  const [message, setMessage] = useState("");
-
   const navigate = useNavigate();
-  const autoRef = useRef(null);
-
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY, // ✅ safer
-    libraries: ["places"],
+  const [form, setForm] = useState({
+    waste_type: "",
+    weight: "",
+    location: "",
+    phone: "",
+    image: null,
   });
+  const [preview, setPreview] = useState(null);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const resetForm = () => {
-    setFile(null);
-    setPreviewURL(null);
-    setFileName("");
-    setWasteType("");
-    setQuantity("");
-    setLocation("");
-    setPlaceName("");
-    setNotes("");
-    setPhone("");
+  const handleChange = (e) => {
+    const { name, value, files } = e.target;
+
+    if (name === "phone" && value.length > 10) return;
+
+    if (name === "image") {
+      const file = files[0];
+      if (file) {
+        setForm({ ...form, image: file });
+        setPreview(URL.createObjectURL(file));
+      } else {
+        setForm({ ...form, image: null });
+        setPreview(null);
+      }
+    } else {
+      setForm({ ...form, [name]: value });
+    }
   };
 
-  const handleFileChange = (e) => {
-    const selected = e.target.files[0];
-    if (selected && ["image/png", "image/jpeg"].includes(selected.type)) {
-      setFile(selected);
-      setPreviewURL(URL.createObjectURL(selected));
-      setFileName(selected.name);
-      setMessage("");
-    } else {
-      setFile(null);
-      setPreviewURL(null);
-      setFileName("");
-      setMessage("⚠️ Please upload only PNG or JPG images");
-    }
+  const removeImage = () => {
+    setForm({ ...form, image: null });
+    setPreview(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setSuccess("");
 
-    if (
-      !file ||
-      !wasteType ||
-      !quantity ||
-      (!location && !placeName) ||
-      !phone
-    ) {
-      setMessage("⚠️ Please fill in all required fields");
-      return;
-    }
+    if (!form.waste_type) return setError("Please select waste type");
+    if (!form.weight || isNaN(form.weight) || form.weight <= 0)
+      return setError("Weight must be a positive number");
+    if (!form.location) return setError("Location is required");
 
-    if (!/^\d{7,15}$/.test(phone)) {
-      setMessage("⚠️ Please enter a valid phone number (7–15 digits)");
-      return;
-    }
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneRegex.test(form.phone))
+      return setError(
+        "Phone number must start with 9, 8, 7, or 6 and be exactly 10 digits"
+      );
 
+    if (!form.image) return setError("Please upload an image (PNG/JPG)");
+
+    const formData = new FormData();
+    formData.append("waste_type", form.waste_type);
+    formData.append("weight", form.weight);
+    formData.append("location", form.location);
+    formData.append("phone", form.phone);
+    formData.append("image", form.image);
+
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user) return setError("User not logged in");
+    formData.append("user", user.user_id);
+
+    setLoading(true);
     try {
-      // Step 1: Upload image
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const uploadRes = await fetch("http://localhost:3000/api/waste/upload", {
+      const res = await fetch("http://localhost:5000/api/user/waste/submit", {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
         body: formData,
       });
 
-      const uploadData = await uploadRes.json();
-      if (!uploadRes.ok) throw new Error(uploadData.error || "Upload failed");
-
-      // Step 2: Submit waste request
-      const res = await fetch("http://localhost:3000/api/waste/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: JSON.parse(localStorage.getItem("user"))?.user_id,
-          waste_type: wasteType,
-          weight: parseFloat(quantity),
-          image_url: uploadData.image_url,
-          location: location || placeName,
-          coords,
-          notes,
-          contact: `${countryCode} ${phone}`,
-        }),
-      });
-
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Submission failed");
 
-      setMessage("✅ Waste request submitted successfully");
-      resetForm();
-    } catch (err) {
-      setMessage(`❌ ${err.message}`);
-    }
-  };
-
-  const handleMapClick = async (e) => {
-    const lat = e.latLng.lat();
-    const lng = e.latLng.lng();
-    setCoords({ lat, lng });
-
-    try {
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${
-          import.meta.env.VITE_GOOGLE_MAPS_API_KEY
-        }`
-      );
-      const data = await response.json();
-      if (data.results?.[0]) {
-        setPlaceName(data.results[0].formatted_address);
-      } else {
-        setPlaceName(`Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`);
+      if (!res.ok) {
+        setError(data.message || "Submission failed");
+        return;
       }
-    } catch {
-      setPlaceName(`Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`);
-    }
-  };
 
-  const handlePlaceSelect = () => {
-    const place = autoRef.current.getPlace();
-    if (place?.geometry) {
-      const lat = place.geometry.location.lat();
-      const lng = place.geometry.location.lng();
-      setCoords({ lat, lng });
-      setPlaceName(place.formatted_address);
+      setSuccess("✅ Waste request submitted successfully!");
+      setForm({
+        waste_type: "",
+        weight: "",
+        location: "",
+        phone: "",
+        image: null,
+      });
+      setPreview(null);
+
+      // Update user points if backend returns updated user
+      if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
+    } catch (err) {
+      setError("Server error. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-green-50 via-yellow-50 to-pink-50 px-2 py-6">
-      <div className="bg-gradient-to-r from-green-100 via-yellow-50 to-pink-50 rounded-2xl shadow-xl w-full max-w-2xl p-6 animate-fadeIn border border-green-200">
-        {/* Back button */}
-        <button
-          className="flex items-center font-semibold mb-4 text-green-700 hover:text-green-900 transition"
-          onClick={() => navigate(-1)}
-        >
-          <FaArrowLeft className="mr-2" /> Go Back
-        </button>
+    <div className="min-h-screen flex flex-col justify-center items-center p-6 bg-gradient-to-br from-pink-100 via-yellow-100 to-green-100">
+      <img
+        src={logo}
+        alt="EcoPay Logo"
+        className="w-32 h-32 object-contain mb-4 drop-shadow-lg"
+      />
 
-        <h2 className="text-2xl font-bold text-green-700 mb-4 text-center">
-          Waste Pickup Request
+      <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md flex flex-col gap-6 border border-gray-100">
+        <h2 className="text-3xl font-extrabold text-green-800 text-center">
+          Submit Waste Pickup Request
         </h2>
 
-        {message && (
-          <p
-            className={`p-2 rounded mb-3 text-center font-medium ${
-              message.startsWith("✅")
-                ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-700"
-            }`}
-          >
-            {message}
+        {error && (
+          <p className="text-red-500 text-center font-medium bg-red-50 p-2 rounded-xl">
+            {error}
           </p>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Upload Waste Image */}
-          <label
-            htmlFor="wasteUpload"
-            className="bg-gradient-to-r from-green-50 via-yellow-50 to-green-50 border-2 border-dashed border-green-300 rounded-xl p-4 flex flex-col items-center cursor-pointer hover:border-green-500 hover:bg-green-100 transition"
+        {success && (
+          <p className="text-green-700 text-center font-medium bg-green-50 p-2 rounded-xl">
+            {success}
+          </p>
+        )}
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <select
+            name="waste_type"
+            value={form.waste_type}
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 text-base"
           >
-            <FaCamera className="text-green-500 text-4xl mb-2" />
-            {previewURL ? (
-              <>
-                <img
-                  src={previewURL}
-                  alt="Preview"
-                  className="rounded-lg shadow max-h-32 object-cover border border-green-200 mb-1"
-                />
-                <p className="text-sm text-gray-600">{fileName}</p>
-              </>
-            ) : (
-              <p className="text-gray-500 text-sm">
-                Click to upload PNG/JPG waste image
-              </p>
-            )}
-            <input
-              type="file"
-              id="wasteUpload"
-              accept="image/png, image/jpeg"
-              className="hidden"
-              onChange={handleFileChange}
-            />
-          </label>
+            <option value="">Select Waste Type</option>
+            <option value="Plastic">Plastic</option>
+            <option value="Paper">Paper</option>
+            <option value="Glass">Glass</option>
+            <option value="Organic">Organic</option>
+          </select>
 
-          {/* Waste Type */}
-          <div>
-            <label className="block text-gray-700 font-medium mb-1 text-base">
-              <FaTrash className="inline mr-2 text-green-600" /> Waste Type
-            </label>
-            <select
-              value={wasteType}
-              onChange={(e) => setWasteType(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg p-2 text-base focus:outline-none focus:ring-2 focus:ring-green-400"
-            >
-              <option value="">Select waste type</option>
-              <option value="Plastic">Plastic</option>
-              <option value="Paper">Paper</option>
-              <option value="Glass">Glass</option>
-              <option value="Organic">Organic</option>
-            </select>
-          </div>
+          <input
+            type="number"
+            name="weight"
+            placeholder="Weight (kg)"
+            value={form.weight}
+            onChange={handleChange}
+            required
+            min={0.1}
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 text-base"
+          />
 
-          {/* Quantity */}
-          <div>
-            <label className="block text-gray-700 font-medium mb-1 text-base">
-              Quantity (kg)
-            </label>
-            <input
-              type="number"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg p-2 text-base focus:outline-none focus:ring-2 focus:ring-green-400"
-              placeholder="Enter quantity"
-              min="0.1"
-              step="0.1"
-            />
-          </div>
+          <input
+            type="text"
+            name="location"
+            placeholder="Pickup Location"
+            value={form.location}
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 text-base"
+          />
 
-          {/* Contact Number */}
-          <div>
-            <label className="block text-gray-700 font-medium mb-1 text-base">
-              <FaPhone className="inline mr-2 text-green-600" /> Contact Number
-            </label>
-            <div className="flex">
-              <select
-                value={countryCode}
-                onChange={(e) => setCountryCode(e.target.value)}
-                className="border border-gray-300 rounded-l-lg p-2 bg-white text-base focus:outline-none"
-              >
-                <option value="+91">🇮🇳 +91</option>
-                <option value="+1">🇺🇸 +1</option>
-                <option value="+44">🇬🇧 +44</option>
-                <option value="+61">🇦🇺 +61</option>
-              </select>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                className="w-full border border-gray-300 rounded-r-lg p-2 text-base focus:outline-none focus:ring-2 focus:ring-green-400"
-                placeholder="Enter phone number"
+          <input
+            type="text"
+            name="phone"
+            placeholder="Phone Number"
+            value={form.phone}
+            onChange={handleChange}
+            required
+            maxLength={10}
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 text-base"
+          />
+
+          <input
+            type="file"
+            name="image"
+            accept=".png,.jpg,.jpeg"
+            onChange={handleChange}
+            required={!preview}
+            className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 text-base"
+          />
+
+          {preview && (
+            <div className="relative mt-2">
+              <img
+                src={preview}
+                alt="Preview"
+                className="w-full h-40 object-cover rounded-xl border border-gray-300 cursor-pointer"
+                onClick={removeImage}
+                title="Click to remove"
               />
-            </div>
-          </div>
-
-          {/* Pickup Location with Autocomplete */}
-          <div>
-            <label className="block text-gray-700 font-medium mb-1 text-base">
-              <FaMapMarkerAlt className="inline mr-2 text-green-600" /> Pickup
-              Location
-            </label>
-            {isLoaded && (
-              <Autocomplete
-                onLoad={(auto) => (autoRef.current = auto)}
-                onPlaceChanged={handlePlaceSelect}
-              >
-                <input
-                  type="text"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="Enter pickup address"
-                  className="w-full border border-gray-300 rounded-lg p-2 text-base focus:outline-none focus:ring-2 focus:ring-green-400"
-                />
-              </Autocomplete>
-            )}
-          </div>
-
-          {/* Map Picker */}
-          {isLoaded && (
-            <div className="w-full h-[250px] border border-green-300 rounded-lg overflow-hidden">
-              <GoogleMap
-                mapContainerStyle={{ width: "100%", height: "100%" }}
-                center={coords}
-                zoom={15}
-                onClick={handleMapClick}
-              >
-                <Marker position={coords} />
-              </GoogleMap>
-              <p className="text-sm text-gray-600 mt-1 text-center">
-                📍{" "}
-                {placeName ||
-                  location ||
-                  `Lat: ${coords.lat}, Lng: ${coords.lng}`}
+              <p className="text-center text-sm text-gray-500 mt-1">
+                Click the image to remove
               </p>
             </div>
           )}
 
-          {/* Notes Section */}
-          <div>
-            <label className="block text-gray-700 font-medium mb-1 text-base">
-              <FaStickyNote className="inline mr-2 text-green-600" /> Additional
-              Notes
-            </label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg p-2 text-base focus:outline-none focus:ring-2 focus:ring-green-400"
-              placeholder="e.g., Near Lovely Building, 2nd floor"
-              rows={2}
-            />
-          </div>
-
-          {/* Submit */}
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-green-300 via-green-400 to-green-300 text-white py-3 text-base rounded-lg hover:scale-105 transition transform font-semibold shadow-md"
+            disabled={loading}
+            className={`w-full bg-gradient-to-r from-green-400 via-green-500 to-green-600 text-white py-3 rounded-full text-lg font-semibold shadow-lg transform transition duration-300 ${
+              loading ? "opacity-70 cursor-not-allowed" : "hover:scale-105"
+            }`}
           >
-            Submit Request
+            {loading ? "Submitting..." : "Submit Request"}
           </button>
         </form>
+
+        <p className="text-center mt-2 text-sm text-gray-600">
+          <button
+            onClick={() => navigate("/home")}
+            className="text-green-600 font-semibold hover:underline"
+          >
+            Back to Home
+          </button>
+        </p>
       </div>
     </div>
   );

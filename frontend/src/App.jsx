@@ -15,7 +15,6 @@ import MyRequests from "./pages/MyRequests";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Store from "./pages/Store";
-import LocationSelect from "./pages/LocationSelect";
 import WasteSubmit from "./pages/WasteSubmit";
 
 function Layout({ children }) {
@@ -49,7 +48,6 @@ export default function App() {
           <Route path="/my-requests" element={<MyRequests />} />
 
           <Route path="/store" element={<Store />} />
-          <Route path="/location" element={<LocationSelect />} />
           <Route path="/waste-submit" element={<WasteSubmit />} />
         </Routes>
       </Layout>

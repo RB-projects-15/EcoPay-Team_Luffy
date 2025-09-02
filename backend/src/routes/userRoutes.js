@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 const WasteRequest = require("../models/WasteRequest");
 const upload = require("../middlewares/upload");
+const userController = require("../controllers/userController"); // ✅ Add this
 
 const {
   register,
@@ -32,7 +33,10 @@ router.get("/transactions", authMiddleware, getTransactions);
 router.get("/rewards", authMiddleware, getRewards); // list all rewards
 router.post("/rewards/redeem", redeemReward);
 
+// Get all requests of logged-in user
+router.get("/my-requests", authMiddleware, userController.getMyRequests);
 // Get specific waste request by ID
+
 router.get("/waste/:id", async (req, res) => {
   try {
     const request = await WasteRequest.findById(req.params.id);

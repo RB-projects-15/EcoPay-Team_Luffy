@@ -140,7 +140,7 @@ exports.submitWaste = async (req, res) => {
 exports.getTransactions = async (req, res) => {
   try {
     // Fetch transactions for the logged-in user
-    const transactions = await Transaction.find({ user: req.user.id });
+    const transactions = await Transaction.find({ user_id: req.user.id });
 
     if (!transactions.length) {
       return res.status(404).json({
@@ -156,32 +156,6 @@ exports.getTransactions = async (req, res) => {
     });
   } catch (err) {
     console.error("Get Transactions Error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Something went wrong. Please try again later.",
-      error: err.message,
-    });
-  }
-};
-// ===== Get User Profile =====
-exports.getProfile = async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).select(
-      "_id name email phone points createdAt updatedAt"
-    );
-    if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "User profile fetched successfully",
-      user,
-    });
-  } catch (err) {
-    console.error("Get Profile Error:", err);
     res.status(500).json({
       success: false,
       message: "Something went wrong. Please try again later.",
@@ -224,9 +198,10 @@ exports.getRewards = async (req, res) => {
 };
 
 // ===== Redeem Reward =====
+
 exports.redeemReward = async (req, res) => {
   try {
-    const userId = req.user.id; // ✅ no need to pass user_id in body
+    const userId = req.user.id;
     const { reward_id } = req.body;
 
     const user = await User.findById(userId);
@@ -235,24 +210,90 @@ exports.redeemReward = async (req, res) => {
         .status(404)
         .json({ success: false, message: "User not found" });
 
-    const rewardPoints = 50; // example fixed points for reward
+    const rewardPoints = 50; // fixed points for now
     if ((user.points || 0) < rewardPoints)
       return res
         .status(400)
         .json({ success: false, message: "Not enough points to redeem" });
 
+    // Deduct points
     user.points -= rewardPoints;
     await user.save();
+
+    // Create transaction record
+    const transaction = new Transaction({
+      user_id: user._id, // ⚡ correct field
+      type: "debit",
+      points: rewardPoints,
+      description: `Redeemed reward (${reward_id})`,
+    });
+    await transaction.save();
 
     res.json({
       success: true,
       message: "Reward redeemed successfully",
       user: { _id: user._id, name: user.name, points: user.points },
+      transaction,
     });
   } catch (err) {
     console.error("Redeem Reward Error:", err);
     res
       .status(500)
       .json({ success: false, message: "Server error", error: err.message });
+  }
+};
+
+// ===== Get All Requests for Logged-in User =====
+exports.getMyRequests = async (req, res) => {
+  try {
+    const requests = await WasteRequest.find({ user: req.user.id }).sort({
+      createdAt: -1,
+    });
+
+    if (!requests.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No waste requests found for this user",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Waste requests fetched successfully",
+      requests,
+    });
+  } catch (err) {
+    console.error("Get My Requests Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong. Please try again later.",
+      error: err.message,
+    });
+  }
+};
+// ===== Get User Profile =====
+exports.getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select(
+      "_id name email phone points createdAt updatedAt"
+    );
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "User profile fetched successfully",
+      user,
+    });
+  } catch (err) {
+    console.error("Get Profile Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong. Please try again later.",
+      error: err.message,
+    });
   }
 };

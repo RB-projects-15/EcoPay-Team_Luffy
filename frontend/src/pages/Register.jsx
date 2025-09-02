@@ -13,16 +13,26 @@ export default function Register() {
     confirmPassword: "",
   });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === "phone" && value.length > 10) return; // limit phone input
+    setForm({ ...form, [name]: value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    // ✅ updated phone validation
+    // Email validation
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+    if (!emailRegex.test(form.email)) {
+      setError("Email must be a valid Gmail address (example@gmail.com)");
+      return;
+    }
+
+    // Phone validation
     const phoneRegex = /^[6-9]\d{9}$/;
     if (!phoneRegex.test(form.phone)) {
       setError(
@@ -31,11 +41,18 @@ export default function Register() {
       return;
     }
 
+    // Password length validation
+    if (form.password.length < 5) {
+      setError("Password must be at least 5 characters long");
+      return;
+    }
+
     if (form.password !== form.confirmPassword) {
       setError("Passwords do not match");
       return;
     }
 
+    setLoading(true);
     try {
       const res = await fetch("http://localhost:5000/api/user/register", {
         method: "POST",
@@ -50,7 +67,6 @@ export default function Register() {
         return;
       }
 
-      // Save minimal user info
       localStorage.setItem(
         "user",
         JSON.stringify({
@@ -65,6 +81,8 @@ export default function Register() {
       navigate("/home");
     } catch (err) {
       setError("Server error. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -74,17 +92,19 @@ export default function Register() {
       <img
         src={logo}
         alt="EcoPay Logo"
-        className="w-40 h-40 object-contain mb-6"
+        className="w-40 h-40 object-contain mb-6 drop-shadow-lg"
       />
 
       {/* Card */}
       <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md flex flex-col gap-6 hover:shadow-emerald-400 transition-shadow duration-500">
-        <h2 className="text-3xl font-bold text-green-800 mb-4 text-center">
+        <h2 className="text-3xl font-bold text-green-800 text-center">
           Create Your Account
         </h2>
 
         {error && (
-          <p className="text-red-500 text-center font-medium">{error}</p>
+          <p className="text-red-500 text-center font-medium bg-red-50 p-2 rounded-xl">
+            {error}
+          </p>
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -95,17 +115,17 @@ export default function Register() {
             value={form.name}
             onChange={handleChange}
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 text-lg"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 transition text-base placeholder-gray-400"
           />
 
           <input
             type="email"
             name="email"
-            placeholder="Email Address"
+            placeholder="Email Address (must end with @gmail.com)"
             value={form.email}
             onChange={handleChange}
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 text-lg"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 transition text-base placeholder-gray-400"
           />
 
           <input
@@ -115,17 +135,18 @@ export default function Register() {
             value={form.phone}
             onChange={handleChange}
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 text-lg"
+            maxLength={10}
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 transition text-base placeholder-gray-400"
           />
 
           <input
             type="password"
             name="password"
-            placeholder="Password"
+            placeholder="Password (min 5 characters)"
             value={form.password}
             onChange={handleChange}
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 text-lg"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 transition text-base placeholder-gray-400"
           />
 
           <input
@@ -135,25 +156,27 @@ export default function Register() {
             value={form.confirmPassword}
             onChange={handleChange}
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 text-lg"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 transition text-base placeholder-gray-400"
           />
 
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-green-400 via-green-500 to-green-600 text-white py-3 rounded-full text-lg font-semibold shadow-lg hover:scale-105 transition transform duration-300"
+            disabled={loading}
+            className={`w-full bg-gradient-to-r from-green-400 via-green-500 to-green-600 text-white py-3 rounded-full text-lg font-semibold shadow-lg transform transition duration-300 ${
+              loading ? "opacity-70 cursor-not-allowed" : "hover:scale-105"
+            }`}
           >
-            Register
+            {loading ? "Registering..." : "Register"}
           </button>
         </form>
 
-        {/* Login Button */}
-        <p className="text-center mt-2">
+        <p className="text-center mt-2 text-sm text-gray-600">
           Already have an account?{" "}
           <button
             onClick={() => navigate("/login")}
-            className="bg-green-100 text-green-700 px-4 py-1 rounded-full text-sm font-semibold hover:bg-green-200 transition"
+            className="text-green-600 font-semibold hover:underline"
           >
-            Login
+            Login here
           </button>
         </p>
       </div>

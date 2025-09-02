@@ -7,6 +7,7 @@ export default function Login() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -15,6 +16,7 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     try {
       const res = await fetch("http://localhost:5000/api/user/login", {
@@ -27,51 +29,49 @@ export default function Login() {
 
       if (!res.ok) {
         setError(data.error || data.message || "Login failed");
+        setLoading(false);
         return;
       }
 
-      // Save token & user info to localStorage
+      // ✅ Save token & full user info
       localStorage.setItem("token", data.token);
       localStorage.setItem(
         "user",
         JSON.stringify({
           user_id: data.user_id,
-          name: data.name, // ✅ NEW
-          email: data.email, // ✅ backend returns directly
-          phone: data.phone, // ✅ NEW
-          role: data.role, // ✅ admin/user
-          points: data.points || 0, // ✅ NEW (default 0 if missing)
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          role: data.role,
+          points: data.points || 0,
         })
       );
 
-      // redirect based on role
-      if (data.role === "admin") {
-        navigate("/admin"); // admin dashboard
-      } else {
-        navigate("/home"); // user home
-      }
+      navigate(data.role === "admin" ? "/admin" : "/home");
     } catch (err) {
       setError("Server error. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center p-6 bg-gradient-to-br from-pink-100 via-yellow-100 to-green-100 animate-fadeIn">
-      {/* Logo */}
       <img
         src={logo}
         alt="EcoPay Logo"
-        className="w-40 h-40 object-contain mb-6"
+        className="w-40 h-40 object-contain mb-6 drop-shadow-lg"
       />
 
-      {/* Card */}
       <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md flex flex-col gap-6 hover:shadow-emerald-400 transition-shadow duration-500">
         <h2 className="text-3xl font-bold text-green-800 mb-4 text-center">
-          Login to Your Account
+          Welcome Back
         </h2>
 
         {error && (
-          <p className="text-red-500 text-center font-medium">{error}</p>
+          <p className="text-red-500 text-center font-medium bg-red-50 p-2 rounded-xl">
+            {error}
+          </p>
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -82,7 +82,7 @@ export default function Login() {
             value={form.email}
             onChange={handleChange}
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 text-lg"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl text-lg focus:outline-none focus:ring-2 focus:ring-green-400 transition"
           />
 
           <input
@@ -92,18 +92,20 @@ export default function Login() {
             value={form.password}
             onChange={handleChange}
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 text-lg"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl text-lg focus:outline-none focus:ring-2 focus:ring-green-400 transition"
           />
 
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-green-400 via-green-500 to-green-600 text-white py-3 rounded-full text-lg font-semibold shadow-lg hover:scale-105 transition transform duration-300"
+            disabled={loading}
+            className={`w-full bg-gradient-to-r from-green-400 via-green-500 to-green-600 text-white py-3 rounded-full text-lg font-semibold shadow-lg transform transition duration-300 ${
+              loading ? "opacity-70 cursor-not-allowed" : "hover:scale-105"
+            }`}
           >
-            Login
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
-        {/* Register Button */}
         <p className="text-center mt-2">
           Don’t have an account?{" "}
           <button
