@@ -3,6 +3,8 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const WasteRequest = require("../models/WasteRequest");
 const Transaction = require("../models/Transaction");
+const Reward = require("../models/Reward"); // NEW
+const RewardRedemption = require("../models/RewardRedemption"); // NEW
 
 const JWT_SECRET = process.env.JWT_SECRET || "R1yA$up3rS3cr3tK3y!2025";
 
@@ -187,12 +189,31 @@ exports.getTransactions = async (req, res) => {
       }, {});
     }
 
-    // Attach waste request details to transactions
+    // === Fetch related rewards for debit transactions ===
+    const rewardIds = transactions
+      .filter((tx) => tx.description.includes("Redeemed reward"))
+      .map((tx) => tx.reward_id)
+      .filter(Boolean);
+
+    let rewardsMap = {};
+    if (rewardIds.length) {
+      const rewards = await Reward.find({ _id: { $in: rewardIds } })
+        .select("_id name  points_required")
+        .lean();
+
+      rewardsMap = rewards.reduce((acc, r) => {
+        acc[r._id] = r;
+        return acc;
+      }, {});
+    }
+
+    // Attach waste request or reward details
     const detailedTransactions = transactions.map((tx) => ({
       ...tx,
       waste_request: tx.waste_request_id
-        ? wasteRequestsMap[tx.waste_request_id]
+        ? wasteRequestsMap[tx.waste_request_id] || null
         : null,
+      reward: tx.reward_id ? rewardsMap[tx.reward_id] || null : null,
     }));
 
     res.json({
@@ -210,24 +231,12 @@ exports.getTransactions = async (req, res) => {
   }
 };
 
-// ===== Get Available Rewards =====
+// ===== Get Available Rewards (from DB) =====
 exports.getRewards = async (req, res) => {
   try {
-    // For now, let's use static rewards. Later, you can fetch from DB
-    const rewards = [
-      {
-        reward_id: "64fa9creward123",
-        name: "EcoCup",
-        points_required: 50,
-        description: "Reusable cup for eco-friendly usage",
-      },
-      {
-        reward_id: "64fa9creward124",
-        name: "Plant a Tree",
-        points_required: 100,
-        description: "Plant a tree in your local area",
-      },
-    ];
+    const rewards = await Reward.find()
+      .select("_id name points_required description ") // 👈 include image
+      .lean();
 
     res.status(200).json({
       success: true,
@@ -239,12 +248,12 @@ exports.getRewards = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Something went wrong. Please try again later.",
+      error: err.message,
     });
   }
 };
 
-// ===== Redeem Reward =====
-
+// ===== Redeem Reward (Create Redemption Request) =====
 exports.redeemReward = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -256,33 +265,91 @@ exports.redeemReward = async (req, res) => {
         .status(404)
         .json({ success: false, message: "User not found" });
 
-    const rewardPoints = 50; // fixed points for now
-    if ((user.points || 0) < rewardPoints)
+    const reward = await Reward.findById(reward_id);
+    if (!reward)
       return res
-        .status(400)
-        .json({ success: false, message: "Not enough points to redeem" });
+        .status(404)
+        .json({ success: false, message: "Reward not found" });
 
-    // Deduct points
-    user.points -= rewardPoints;
+    if ((user.points || 0) < reward.points_required) {
+      return res.status(400).json({
+        success: false,
+        message: "Not enough points to redeem this reward",
+      });
+    }
+
+    // ✅ Deduct points
+    user.points -= reward.points_required;
     await user.save();
 
-    // Create transaction record
+    // ✅ Create redemption request (status: pending)
+    const redemption = new RewardRedemption({
+      user: userId,
+      reward: reward_id,
+      status: "pending",
+      requested_at: new Date(),
+    });
+    await redemption.save();
+
+    // ✅ Create a debit transaction
     const transaction = new Transaction({
-      user_id: user._id, // ⚡ correct field
+      user_id: userId,
       type: "debit",
-      points: rewardPoints,
-      description: `Redeemed reward (${reward_id})`,
+      points: reward.points_required,
+      description: `Redeemed reward: ${reward.name}`,
+      reward_id: reward._id,
     });
     await transaction.save();
 
-    res.json({
+    res.status(200).json({
       success: true,
-      message: "Reward redeemed successfully",
-      user: { _id: user._id, name: user.name, points: user.points },
-      transaction,
+      message: "Reward redemption request submitted",
+      redemption: {
+        _id: redemption._id,
+        reward_id: reward._id,
+        status: redemption.status,
+        requested_at: redemption.requested_at,
+      },
+      transaction, // 👈 return transaction info too
     });
   } catch (err) {
     console.error("Redeem Reward Error:", err);
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: err.message });
+  }
+};
+
+// ===== Get All Reward Redemptions of Logged-in User =====
+exports.getRedemptions = async (req, res) => {
+  try {
+    const redemptions = await RewardRedemption.find({ user: req.user.id })
+      .populate("reward", "name points_required description ") // 👈 include image
+      .sort({ requested_at: -1 })
+      .lean();
+
+    if (!redemptions.length) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No reward redemptions found" });
+    }
+
+    // Map response
+    const formattedRedemptions = redemptions.map((r) => ({
+      _id: r._id,
+      reward_name: r.reward.name,
+      points_used: r.reward.points_required,
+      status: r.status,
+      requested_at: r.requested_at,
+      completed_at: r.completed_at || null,
+    }));
+
+    res.status(200).json({
+      success: true,
+      redemptions: formattedRedemptions,
+    });
+  } catch (err) {
+    console.error("Get Redemptions Error:", err);
     res
       .status(500)
       .json({ success: false, message: "Server error", error: err.message });

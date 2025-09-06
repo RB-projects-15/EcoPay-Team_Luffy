@@ -10,8 +10,9 @@ const {
   login,
   submitWaste,
   getTransactions,
-  redeemReward,
-  getRewards, // <- new
+  getRewards, // list all rewards
+  redeemReward, // create redemption request
+  getRedemptions, // get all redemptions of logged-in user
   getProfile, // 👈 import the new controller
 } = require("../controllers/userController");
 
@@ -30,9 +31,15 @@ router.post("/waste/submit", upload.single("image"), submitWaste);
 // Get user transactions (from JWT, no need user_id in params)
 router.get("/transactions", authMiddleware, getTransactions);
 
-// Redeem rewards
-router.get("/rewards", authMiddleware, getRewards); // list all rewards
-router.post("/rewards/redeem", redeemReward);
+//----------------- REWARDS -----------------
+// List all rewards (read-only)
+router.get("/rewards/all", getRewards);
+
+// Redeem a reward (creates redemption request with pending status)
+router.post("/rewards/redeem/create", redeemReward);
+
+// Get all reward redemption requests of logged-in user
+router.get("/rewards/redemptions/my", getRedemptions);
 
 // Get all requests of logged-in user
 router.get("/my-requests", authMiddleware, userController.getMyRequests);

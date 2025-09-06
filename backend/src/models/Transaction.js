@@ -11,6 +11,18 @@ const TransactionSchema = new mongoose.Schema(
     type: { type: String, enum: ["credit", "debit"], required: true },
     points: { type: Number, required: true },
     description: { type: String, required: true },
+
+    // 👇 Optional links for better traceability
+    waste_request_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "WasteRequest",
+      default: null,
+    },
+    reward_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Reward",
+      default: null,
+    },
   },
   { timestamps: true } // createdAt and updatedAt
 );

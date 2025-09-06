@@ -6,6 +6,8 @@ import {
   FaUsers,
   FaChartBar,
   FaCog,
+  FaGift,
+  FaBoxOpen,
 } from "react-icons/fa";
 
 export default function Sidebar() {
@@ -14,6 +16,8 @@ export default function Sidebar() {
     { name: "Requests", path: "/admin/requests", icon: <FaTasks /> },
     { name: "Manage Users", path: "/admin/users", icon: <FaUsers /> },
     { name: "Reports", path: "/admin/transactions", icon: <FaChartBar /> },
+    { name: "Rewards", path: "/admin/rewards", icon: <FaGift /> },
+    { name: "Redemptions", path: "/admin/redemptions", icon: <FaBoxOpen /> },
     { name: "Settings", path: "/admin/settings", icon: <FaCog /> },
   ];
 

@@ -16,6 +16,7 @@ import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Store from "./pages/Store";
 import WasteSubmit from "./pages/WasteSubmit";
+import MyOrders from "./pages/MyOrders"; // ✅ Import MyOrders page
 
 function Layout({ children }) {
   const location = useLocation();
@@ -41,12 +42,12 @@ export default function App() {
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
-
+          <Route path="/my-orders" element={<MyOrders />} />{" "}
+          {/* ✅ New Route */}
           {/* With Navbar */}
           <Route path="/home" element={<Home />} />
           <Route path="/transactions" element={<MyTransactions />} />
           <Route path="/my-requests" element={<MyRequests />} />
-
           <Route path="/store" element={<Store />} />
           <Route path="/waste-submit" element={<WasteSubmit />} />
         </Routes>

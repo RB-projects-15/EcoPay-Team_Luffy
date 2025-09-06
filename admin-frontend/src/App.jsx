@@ -8,6 +8,9 @@ import AdminRequests from "./pages/AdminRequests";
 import ManageUsers from "./pages/ManageUsers";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
+// ✅ Import new pages
+import AdminRewards from "./pages/AdminRewards";
+import AdminRedemptions from "./pages/AdminRedemptions";
 
 export default function App() {
   return (
@@ -27,6 +30,9 @@ export default function App() {
         <Route path="requests" element={<AdminRequests />} />
         <Route path="transactions" element={<Reports />} />
         <Route path="users" element={<ManageUsers />} />
+        {/* ✅ New routes */}
+        <Route path="rewards" element={<AdminRewards />} />
+        <Route path="redemptions" element={<AdminRedemptions />} />
         <Route path="settings" element={<Settings />} />
       </Route>
 

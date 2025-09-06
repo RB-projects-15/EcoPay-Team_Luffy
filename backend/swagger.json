@@ -441,6 +441,171 @@
     }
   }
 },
+"/api/user/rewards/all": {
+  "get": {
+    "summary": "Get all available rewards for the logged-in user",
+    "tags": ["User"],
+    "security": [{ "bearerAuth": [] }],
+    "responses": {
+      "200": {
+        "description": "List of rewards fetched successfully",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": true,
+              "message": "Rewards fetched successfully",
+              "rewards": [
+                {
+                  "reward_id": "64fa9creward123",
+                  "name": "EcoCup",
+                  "points_required": 50,
+                  "description": "Reusable cup for eco-friendly usage"
+                },
+                {
+                  "reward_id": "64fa9creward124",
+                  "name": "Plant a Tree",
+                  "points_required": 100,
+                  "description": "Plant a tree in your local area"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized or invalid token",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Unauthorized: No token provided or token is invalid"
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/user/rewards/redeem/create": {
+  "post": {
+    "summary": "User redeems a reward (creates redemption request with pending status)",
+    "tags": ["User"],
+    "security": [{ "bearerAuth": [] }],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "reward_id": { "type": "string", "example": "64fa9creward123" }
+            },
+            "required": ["reward_id"]
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Redemption request created successfully",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": true,
+              "message": "Reward redemption request submitted",
+              "redemption": {
+                "_id": "66c2e7b1b9a8f8e2d1234567",
+                "reward_id": "64fa9creward123",
+                "reward_name": "EcoCup",
+                "status": "pending",
+                "requested_at": "2025-09-03T12:00:00Z"
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "description": "Validation error or insufficient points",
+        "content": {
+          "application/json": {
+            "examples": {
+              "MissingField": {
+                "summary": "Reward ID missing",
+                "value": {
+                  "success": false,
+                  "message": "reward_id is required"
+                }
+              },
+              "InsufficientPoints": {
+                "summary": "Not enough points",
+                "value": {
+                  "success": false,
+                  "message": "Not enough points to redeem this reward"
+                }
+              }
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Unauthorized"
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/user/rewards/redemptions/my": {
+  "get": {
+    "summary": "Get all reward redemption requests of the logged-in user",
+    "tags": ["User"],
+    "security": [{ "bearerAuth": [] }],
+    "responses": {
+      "200": {
+        "description": "List of user's redemption requests with status tracking",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": true,
+              "redemptions": [
+                {
+                  "_id": "66c2e7b1b9a8f8e2d1234567",
+                  "reward_name": "EcoCup",
+                  "status": "completed",
+                  "requested_at": "2025-08-30T10:00:00Z",
+                  "completed_at": "2025-09-02T10:00:00Z"
+                },
+                {
+                  "_id": "66c2e7b1b9a8f8e2d7654321",
+                  "reward_name": "EcoBottle",
+                  "status": "out_for_delivery",
+                  "requested_at": "2025-09-03T12:00:00Z"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Unauthorized"
+            }
+          }
+        }
+      }
+    }
+  }
+},
 "/api/user/profile": {
   "get": {
     "summary": "Get logged-in user profile",
@@ -504,157 +669,6 @@
   }
 },
 
-"/api/user/rewards": {
-  "get": {
-    "summary": "Get all available rewards for the logged-in user",
-    "tags": ["User"],
-    "security": [{ "bearerAuth": [] }],
-    "responses": {
-      "200": {
-        "description": "List of rewards fetched successfully",
-        "content": {
-          "application/json": {
-            "example": {
-              "success": true,
-              "message": "Rewards fetched successfully",
-              "rewards": [
-                {
-                  "reward_id": "64fa9creward123",
-                  "name": "EcoCup",
-                  "points_required": 50,
-                  "description": "Reusable cup for eco-friendly usage"
-                },
-                {
-                  "reward_id": "64fa9creward124",
-                  "name": "Plant a Tree",
-                  "points_required": 100,
-                  "description": "Plant a tree in your local area"
-                }
-              ]
-            }
-          }
-        }
-      },
-      "401": {
-        "description": "Unauthorized or invalid token",
-        "content": {
-          "application/json": {
-            "example": {
-              "success": false,
-              "message": "Unauthorized: No token provided or token is invalid"
-            }
-          }
-        }
-      },
-      "500": {
-        "description": "Internal server error",
-        "content": {
-          "application/json": {
-            "example": {
-              "success": false,
-              "message": "Something went wrong. Please try again later."
-            }
-          }
-        }
-      }
-    }
-  }
-},
-"/api/user/rewards/redeem": {
-  "post": {
-    "summary": "Redeem a reward",
-    "tags": ["User"],
-    "security": [{ "bearerAuth": [] }],
-    "requestBody": {
-      "required": true,
-      "content": {
-        "application/json": {
-          "schema": {
-            "type": "object",
-            "properties": {
-              "reward_id": { "type": "string", "example": "64fa9creward123" }
-            },
-            "required": ["reward_id"]
-          }
-        }
-      }
-    },
-    "responses": {
-      "200": {
-        "description": "Reward redeemed successfully",
-        "content": {
-          "application/json": {
-            "example": {
-              "success": true,
-              "message": "Reward redeemed successfully",
-              "user": {
-                "_id": "66c2e7b1b9a8f8e2d1234567",
-                "name": "Riya",
-                "points": 70
-              }
-            }
-          }
-        }
-      },
-      "400": {
-        "description": "Validation error or insufficient points",
-        "content": {
-          "application/json": {
-            "examples": {
-              "MissingField": {
-                "summary": "Reward ID missing",
-                "value": {
-                  "success": false,
-                  "message": "reward_id is required"
-                }
-              },
-              "InsufficientPoints": {
-                "summary": "Not enough points",
-                "value": {
-                  "success": false,
-                  "message": "Not enough points to redeem this reward"
-                }
-              }
-            }
-          }
-        }
-      },
-      "404": {
-        "description": "Reward not found",
-        "content": {
-          "application/json": {
-            "example": {
-              "success": false,
-              "message": "Reward not found for this user"
-            }
-          }
-        }
-      },
-      "401": {
-        "description": "Unauthorized or invalid token",
-        "content": {
-          "application/json": {
-            "example": {
-              "success": false,
-              "message": "Unauthorized: No token provided or token is invalid"
-            }
-          }
-        }
-      },
-      "500": {
-        "description": "Internal server error",
-        "content": {
-          "application/json": {
-            "example": {
-              "success": false,
-              "message": "Something went wrong. Please try again later."
-            }
-          }
-        }
-      }
-    }
-  }
-},
 
 
 
@@ -975,7 +989,6 @@
     }
   }
 },
-
 "/api/admin/requests/{id}/complete": {
   "post": {
     "summary": "Mark a waste pickup request as completed and credit points dynamically based on waste type",
@@ -1054,9 +1067,353 @@
     }
   }
 },
-
-
-
+"/api/admin/rewards/all": {
+  "get": {
+    "summary": "Get all rewards (Admin only)",
+    "tags": ["Admin"],
+    "security": [{ "bearerAuth": [] }],
+    "responses": {
+      "200": {
+        "description": "List of rewards fetched successfully",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": true,
+              "rewards": [
+                {
+                  "_id": "64fa9creward123",
+                  "name": "EcoCup",
+                  "points_required": 50,
+                  "description": "Reusable eco-friendly cup"
+                },
+                {
+                  "_id": "64fa9creward124",
+                  "name": "Plant a Tree",
+                  "points_required": 100,
+                  "description": "Plant a tree in your local area"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized or invalid token",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Unauthorized: No token provided or token is invalid"
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/admin/rewards/create": {
+  "post": {
+    "summary": "Create a new reward (Admin only)",
+    "tags": ["Admin"],
+    "security": [{ "bearerAuth": [] }],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "points_required": { "type": "integer" },
+              "description": { "type": "string" }
+            },
+            "required": ["name", "points_required"]
+          }
+        }
+      }
+    },
+    "responses": {
+      "201": {
+        "description": "Reward created successfully",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": true,
+              "message": "Reward created successfully",
+              "reward": {
+                "_id": "64fa9creward125",
+                "name": "EcoBottle",
+                "points_required": 80,
+                "description": "Reusable eco-friendly bottle"
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "description": "Validation error",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Missing required field: name or points_required"
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized or invalid token",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Unauthorized"
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/admin/rewards/update/{id}": {
+  "put": {
+    "summary": "Update reward (Admin only)",
+    "tags": ["Admin"],
+    "security": [{ "bearerAuth": [] }],
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" }
+      }
+    ],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "points_required": { "type": "integer" },
+              "description": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Reward updated successfully",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": true,
+              "message": "Reward updated successfully",
+              "reward": {
+                "_id": "64fa9creward123",
+                "name": "EcoCup Updated",
+                "points_required": 60,
+                "description": "Updated description"
+              }
+            }
+          }
+        }
+      },
+      "404": {
+        "description": "Reward not found",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Reward not found"
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Unauthorized"
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/admin/rewards/delete/{id}": {
+  "delete": {
+    "summary": "Delete reward (Admin only)",
+    "tags": ["Admin"],
+    "security": [{ "bearerAuth": [] }],
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Reward deleted successfully",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": true,
+              "message": "Reward deleted successfully"
+            }
+          }
+        }
+      },
+      "404": {
+        "description": "Reward not found",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Reward not found"
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Unauthorized"
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/admin/rewards/redemptions/all": {
+  "get": {
+    "summary": "Admin views all user redemption requests",
+    "tags": ["Admin"],
+    "security": [{ "bearerAuth": [] }],
+    "responses": {
+      "200": {
+        "description": "List of all user redemption requests",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": true,
+              "redemptions": [
+                {
+                  "_id": "66c2e7b1b9a8f8e2d1234567",
+                  "user": "Riya",
+                  "reward_name": "EcoCup",
+                  "status": "pending",
+                  "requested_at": "2025-09-03T12:00:00Z"
+                },
+                {
+                  "_id": "66c2e7b1b9a8f8e2d7654321",
+                  "user": "Amit",
+                  "reward_name": "EcoBottle",
+                  "status": "out_for_delivery",
+                  "requested_at": "2025-09-03T13:00:00Z"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Unauthorized"
+            }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/admin/rewards/redemptions/{id}": {
+  "put": {
+    "summary": "Admin updates redemption status (track delivery stages)",
+    "tags": ["Admin"],
+    "security": [{ "bearerAuth": [] }],
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" }
+      }
+    ],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": ["pending", "out_for_delivery", "will_reach_today", "completed"]
+              }
+            },
+            "required": ["status"]
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Redemption status updated successfully",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": true,
+              "message": "Redemption status updated to out_for_delivery",
+              "redemption": {
+                "_id": "66c2e7b1b9a8f8e2d1234567",
+                "reward_name": "EcoCup",
+                "status": "out_for_delivery"
+              }
+            }
+          }
+        }
+      },
+      "404": {
+        "description": "Redemption request not found",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Redemption request not found"
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": false,
+              "message": "Unauthorized"
+            }
+          }
+        }
+      }
+    }
+  }
+},
 "/api/admin/users": {
   "get": {
     "summary": "Get all registered users",

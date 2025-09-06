@@ -11,6 +11,7 @@ import {
   FaPhoneAlt,
   FaRecycle,
   FaListAlt,
+  FaBoxOpen, // ✅ Added icon for My Orders
 } from "react-icons/fa";
 
 export default function AccountDrawer({ isOpen, onClose }) {
@@ -153,6 +154,14 @@ export default function AccountDrawer({ isOpen, onClose }) {
                 className="flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-white rounded-xl shadow hover:scale-105 transition transform font-medium"
               >
                 <FaListAlt /> My Transactions
+              </button>
+
+              {/* ✅ New My Orders button */}
+              <button
+                onClick={() => navigate("/my-orders")}
+                className="flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-purple-400 via-purple-500 to-purple-600 text-white rounded-xl shadow hover:scale-105 transition transform font-medium"
+              >
+                <FaBoxOpen /> My Orders
               </button>
 
               <button
