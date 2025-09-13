@@ -1,6 +1,7 @@
 // src/components/Navbar.jsx
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { FaBars, FaTimes } from "react-icons/fa";
 import AccountDrawer from "./AccountDrawer";
 import logo from "../assets/logo.png";
 import defaultProfile from "../assets/profile.png";
@@ -8,6 +9,7 @@ import defaultProfile from "../assets/profile.png";
 export default function Navbar() {
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [mobileMenu, setMobileMenu] = useState(false);
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -31,19 +33,19 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="bg-gradient-to-r from-green-500 via-green-600 to-green-500 p-5 flex justify-between items-center shadow-lg rounded-b-xl">
+      <nav className="bg-gradient-to-r from-green-500 via-green-600 to-green-500 p-4 flex justify-between items-center shadow-lg rounded-b-xl relative">
         {/* Logo and Text */}
         <div className="flex items-center space-x-3">
           <Link to="/home" className="flex items-center">
-            <img src={logo} alt="EcoPay Logo" className="h-14 w-auto" />
-            <span className="ml-3 text-white text-2xl font-bold tracking-wide">
+            <img src={logo} alt="EcoPay Logo" className="h-12 w-auto" />
+            <span className="ml-2 text-white text-2xl font-bold tracking-wide">
               EcoPay
             </span>
           </Link>
         </div>
 
-        {/* Links */}
-        <div className="flex items-center space-x-8 text-white font-medium text-lg">
+        {/* Desktop Links */}
+        <div className="hidden md:flex items-center space-x-8 text-white font-medium text-lg">
           {links.map((link, idx) => (
             <Link
               key={idx}
@@ -58,7 +60,7 @@ export default function Navbar() {
           {/* Profile Button */}
           <button
             onClick={() => setDrawerOpen(true)}
-            className="rounded-full overflow-hidden w-14 h-14 border-2 border-white hover:scale-110 transition-transform duration-300 shadow-md"
+            className="rounded-full overflow-hidden w-12 h-12 border-2 border-white hover:scale-110 transition-transform duration-300 shadow-md"
           >
             <img
               src={user?.profilePic || defaultProfile}
@@ -67,6 +69,43 @@ export default function Navbar() {
             />
           </button>
         </div>
+
+        {/* Mobile Menu Button */}
+        <button
+          className="md:hidden text-white text-2xl focus:outline-none"
+          onClick={() => setMobileMenu(!mobileMenu)}
+        >
+          {mobileMenu ? <FaTimes /> : <FaBars />}
+        </button>
+
+        {/* Mobile Dropdown */}
+        {mobileMenu && (
+          <div className="absolute top-full left-0 w-full bg-green-600 shadow-lg rounded-b-xl flex flex-col items-center py-4 md:hidden z-50 animate-slideDown">
+            {links.map((link, idx) => (
+              <Link
+                key={idx}
+                to={link.path}
+                onClick={() => setMobileMenu(false)}
+                className="text-white py-2 text-lg w-full text-center hover:bg-green-700 transition"
+              >
+                {link.name}
+              </Link>
+            ))}
+            <button
+              onClick={() => {
+                setDrawerOpen(true);
+                setMobileMenu(false);
+              }}
+              className="mt-3 rounded-full overflow-hidden w-12 h-12 border-2 border-white shadow-md"
+            >
+              <img
+                src={user?.profilePic || defaultProfile}
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
+            </button>
+          </div>
+        )}
       </nav>
 
       {/* Account Drawer */}

@@ -20,7 +20,7 @@ export default function MyRequests() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState(null);
-  const [timers, setTimers] = useState({}); // countdown timers
+  const [timers, setTimers] = useState({});
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -28,15 +28,12 @@ export default function MyRequests() {
         const token = localStorage.getItem("token");
         const res = await axios.get(
           "http://localhost:5000/api/user/my-requests",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
 
         if (res.data.success) {
           setRequests(res.data.requests);
 
-          // Initialize countdown timers for approved requests
           const approvedTimers = {};
           res.data.requests.forEach((req) => {
             if (req.collection_time && req.status === "approved") {
@@ -57,10 +54,10 @@ export default function MyRequests() {
     fetchRequests();
   }, []);
 
-  // Countdown timer updater
+  // Live countdown updates
   useEffect(() => {
     const interval = setInterval(() => {
-      const updatedTimers = { ...timers };
+      const updatedTimers = {};
       requests.forEach((req) => {
         if (req.collection_time && req.status === "approved") {
           updatedTimers[req._id] = calculateCountdown(req.collection_time);
@@ -70,7 +67,7 @@ export default function MyRequests() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [requests, timers]);
+  }, [requests]);
 
   const calculateCountdown = (time) => {
     const diff = new Date(time) - new Date();
@@ -107,11 +104,14 @@ export default function MyRequests() {
     }
   };
 
-  if (loading) return <p className="text-center">Loading...</p>;
-  if (error) return <p className="text-center text-red-600">{error}</p>;
+  if (loading)
+    return (
+      <p className="text-center text-gray-500 mt-10">Loading requests...</p>
+    );
+  if (error) return <p className="text-center text-red-600 mt-10">{error}</p>;
 
   return (
-    <div className="p-6">
+    <div className="p-6 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <h1 className="text-3xl font-bold text-center mb-8 text-green-700">
         My Waste Requests
       </h1>
@@ -124,7 +124,7 @@ export default function MyRequests() {
             <div
               key={req._id}
               onClick={() => setSelected(req)}
-              className="bg-white shadow-lg rounded-2xl overflow-hidden hover:shadow-xl transition duration-300 cursor-pointer"
+              className="bg-white shadow-md rounded-2xl overflow-hidden hover:shadow-xl transition duration-300 cursor-pointer"
             >
               {/* Image */}
               {req.image_url ? (
@@ -183,7 +183,7 @@ export default function MyRequests() {
       {/* Modal */}
       {selected && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-11/12 md:w-2/3 lg:w-1/2 p-6 relative">
+          <div className="bg-white rounded-2xl shadow-2xl w-11/12 md:w-2/3 lg:w-1/2 p-6 relative animate-fadeIn">
             <button
               onClick={() => setSelected(null)}
               className="absolute top-3 right-3 text-gray-600 hover:text-red-500 text-xl"
@@ -191,7 +191,6 @@ export default function MyRequests() {
               ✕
             </button>
 
-            {/* Image */}
             {selected.image_url && (
               <img
                 src={`http://localhost:5000${selected.image_url}`}
@@ -200,7 +199,6 @@ export default function MyRequests() {
               />
             )}
 
-            {/* Details */}
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
               <FaTrash className="text-green-600" /> {selected.waste_type}
             </h2>
@@ -234,8 +232,6 @@ export default function MyRequests() {
                 <FaClock className="mr-2" />{" "}
                 {new Date(selected.createdAt).toLocaleString()}
               </p>
-
-              {/* Countdown in modal */}
               {selected.status === "approved" && selected.collection_time && (
                 <p className="text-blue-600 font-semibold">
                   🕒 Collection in:{" "}
@@ -244,7 +240,7 @@ export default function MyRequests() {
               )}
             </div>
 
-            {/* Status Timeline */}
+            {/* Timeline */}
             <div className="border-t pt-4">
               <h3 className="text-lg font-semibold mb-3">Status Timeline</h3>
               <div className="flex items-center justify-between">
