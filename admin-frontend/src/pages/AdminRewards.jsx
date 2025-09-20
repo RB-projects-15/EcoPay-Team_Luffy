@@ -209,7 +209,7 @@ export default function AdminRewards() {
         />
         <button
           type="submit"
-          className="bg-green-600 text-white py-2 rounded hover:bg-green-700"
+          className="bg-blue-600 text-white py-2 rounded hover:bg-blue-800"
         >
           Create Reward
         </button>
@@ -222,7 +222,7 @@ export default function AdminRewards() {
             key={reward._id}
             className="bg-white shadow rounded p-4 hover:shadow-lg"
           >
-            <h2 className="text-lg font-bold text-green-700">{reward.name}</h2>
+            <h2 className="text-lg font-bold text-blue-600">{reward.name}</h2>
             <p className="text-gray-600">{reward.description}</p>
             <p className="text-yellow-600 font-semibold mt-1">
               {reward.points_required} Points

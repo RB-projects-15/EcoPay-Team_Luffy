@@ -65,9 +65,7 @@ export default function ManageUsers() {
                 <th className="p-4 text-sm font-semibold text-left">Name</th>
                 <th className="p-4 text-sm font-semibold text-left">Email</th>
                 <th className="p-4 text-sm font-semibold text-left">Phone</th>
-                <th className="p-4 text-sm font-semibold text-center">
-                  Total Requests
-                </th>
+
                 <th className="p-4 text-sm font-semibold text-center">
                   Points
                 </th>
@@ -91,11 +89,6 @@ export default function ManageUsers() {
                   {/* Email & Phone */}
                   <td className="p-4 text-gray-600">{user.email || "N/A"}</td>
                   <td className="p-4 text-gray-600">{user.phone || "N/A"}</td>
-
-                  {/* Total Requests */}
-                  <td className="p-4 text-center font-semibold text-gray-800">
-                    {user.totalRequests ?? user.requests?.length ?? 0}
-                  </td>
 
                   {/* Points */}
                   <td className="p-4 text-center font-semibold text-yellow-600 flex items-center justify-center gap-1">

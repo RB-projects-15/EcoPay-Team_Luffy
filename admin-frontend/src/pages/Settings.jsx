@@ -49,24 +49,6 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* ✅ Account Settings */}
-          <div className="bg-white shadow rounded-2xl p-6">
-            <h2 className="text-xl font-semibold text-gray-700 mb-4 flex items-center gap-2">
-              <FaCog className="text-gray-500" /> Account Preferences
-            </h2>
-            <ul className="space-y-3 text-gray-600">
-              <li className="hover:bg-gray-50 p-3 rounded-lg cursor-pointer transition">
-                🔑 Change Password
-              </li>
-              <li className="hover:bg-gray-50 p-3 rounded-lg cursor-pointer transition">
-                📱 Enable Two-Factor Authentication
-              </li>
-              <li className="hover:bg-gray-50 p-3 rounded-lg cursor-pointer transition">
-                🌙 Dark Mode (Coming Soon)
-              </li>
-            </ul>
-          </div>
-
           {/* ✅ Danger Zone */}
           <div className="bg-white shadow rounded-2xl p-6 border border-red-200">
             <h2 className="text-xl font-semibold text-red-600 mb-4">

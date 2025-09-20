@@ -1,6 +1,7 @@
 // src/pages/admin/AdminRedemptions.jsx
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { FaBoxOpen } from "react-icons/fa";
 
 export default function AdminRedemptions() {
   const [redemptions, setRedemptions] = useState([]);
@@ -8,7 +9,7 @@ export default function AdminRedemptions() {
   const [error, setError] = useState("");
   const [updatingId, setUpdatingId] = useState(null);
 
-  const token = localStorage.getItem("adminToken"); // Admin token from login
+  const token = localStorage.getItem("adminToken");
   const API_BASE = "http://localhost:5000";
 
   // Fetch all redemption requests
@@ -41,7 +42,6 @@ export default function AdminRedemptions() {
       );
       if (res.data.success) {
         alert(res.data.message);
-        // Update local state
         setRedemptions((prev) =>
           prev.map((r) =>
             r._id === id
@@ -69,9 +69,13 @@ export default function AdminRedemptions() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold text-green-700 mb-4">
-        Reward Redemptions
-      </h1>
+      {/* Page Header */}
+      <div className="flex items-center gap-3 mb-6">
+        <FaBoxOpen className="text-3xl text-black-600" />
+        <h1 className="text-2xl font-bold text-black-700">
+          Reward Redemptions
+        </h1>
+      </div>
 
       {redemptions.length === 0 ? (
         <p className="text-gray-600">No redemption requests found.</p>
@@ -80,16 +84,29 @@ export default function AdminRedemptions() {
           {redemptions.map((r) => (
             <div
               key={r._id}
-              className="bg-white shadow rounded p-4 hover:shadow-lg flex flex-col gap-2"
+              className="bg-white rounded-xl shadow-md p-5 border border-blue-100 hover:shadow-lg transition-all duration-200"
             >
-              <h2 className="text-lg font-bold text-green-700">
+              {/* Reward Title */}
+              <h2 className="text-lg font-bold text-black-600">
                 {r.reward?.name || r.reward_name}
               </h2>
-              <p className="text-gray-600">User: {r.user?.name || r.user}</p>
-              <p className="text-gray-600">Email: {r.user?.email || "-"}</p>
-              <p className="text-yellow-600 font-semibold">
+
+              {/* User Info */}
+              <p className="text-gray-700 mt-1">
+                <span className="font-medium">User:</span>{" "}
+                {r.user?.name || r.user}
+              </p>
+              <p className="text-gray-700">
+                <span className="font-medium">Email:</span>{" "}
+                {r.user?.email || "-"}
+              </p>
+
+              {/* Status */}
+              <p className="text-yellow-600 font-semibold mt-2">
                 Status: {r.status.replaceAll("_", " ")}
               </p>
+
+              {/* Dates */}
               <p className="text-gray-500 text-sm">
                 Requested At: {new Date(r.requested_at).toLocaleString()}
               </p>
@@ -100,7 +117,7 @@ export default function AdminRedemptions() {
               )}
 
               {/* Status Buttons */}
-              <div className="flex flex-wrap gap-2 mt-2">
+              <div className="flex flex-wrap gap-2 mt-3">
                 {[
                   "pending",
                   "out_for_delivery",
@@ -111,10 +128,10 @@ export default function AdminRedemptions() {
                     key={statusOption}
                     disabled={updatingId === r._id}
                     onClick={() => handleStatusUpdate(r._id, statusOption)}
-                    className={`px-3 py-1 rounded text-white text-sm ${
+                    className={`px-3 py-1.5 rounded-lg text-white text-sm font-medium transition-all duration-200 ${
                       r.status === statusOption
-                        ? "bg-green-600"
-                        : "bg-gray-500 hover:bg-gray-600"
+                        ? "bg-blue-600 shadow-md"
+                        : "bg-gray-400 hover:bg-gray-500"
                     }`}
                   >
                     {statusOption.replaceAll("_", " ")}
