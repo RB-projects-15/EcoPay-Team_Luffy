@@ -1,7 +1,14 @@
 // src/pages/MyOrders.jsx
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { FaClock, FaBox, FaTruck, FaCheckCircle } from "react-icons/fa";
+import { FaClock, FaBox, FaTruck, FaCheckCircle, FaUser } from "react-icons/fa";
+
+const deliveryGuys = [
+  { name: "Rahul Sharma", contact: "+91 98765 43210" },
+  { name: "Priya Singh", contact: "+91 91234 56789" },
+  { name: "Ankit Verma", contact: "+91 99887 66554" },
+  { name: "Sneha Patel", contact: "+91 90123 45678" },
+];
 
 export default function MyOrders() {
   const [redemptions, setRedemptions] = useState([]);
@@ -114,51 +121,74 @@ export default function MyOrders() {
       </h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {redemptions.map((r) => (
-          <div
-            key={r._id}
-            className="bg-white rounded-xl shadow-lg p-5 flex flex-col justify-between hover:shadow-xl transition duration-300"
-          >
-            {/* Header */}
-            <h2 className="text-lg font-bold text-gray-800 mb-2">
-              {r.reward_name}
-            </h2>
+        {redemptions.map((r) => {
+          // Random delivery guy
+          const deliveryGuy =
+            deliveryGuys[Math.floor(Math.random() * deliveryGuys.length)];
 
-            {/* Status Badge */}
-            {getStatusBadge(r.status)}
+          // Estimated delivery date (5 business days)
+          const requestedDate = new Date(r.requested_at);
+          const deliveryDate = new Date(requestedDate);
+          deliveryDate.setDate(deliveryDate.getDate() + 7); // approx. 5 business days
 
-            {/* Dates */}
-            <div className="mt-3 text-sm text-gray-600 space-y-1">
-              <p>
-                <strong>Requested:</strong>{" "}
-                {new Date(r.requested_at).toLocaleString()}
-              </p>
-              {r.completed_at && (
+          return (
+            <div
+              key={r._id}
+              className="bg-white rounded-xl shadow-lg p-5 flex flex-col justify-between hover:shadow-xl transition duration-300"
+            >
+              {/* Header */}
+              <h2 className="text-lg font-bold text-gray-800 mb-2">
+                {r.reward_name}
+              </h2>
+
+              {/* Status Badge */}
+              {getStatusBadge(r.status)}
+
+              {/* Dates */}
+              <div className="mt-3 text-sm text-gray-600 space-y-1">
                 <p>
-                  <strong>Completed:</strong>{" "}
-                  {new Date(r.completed_at).toLocaleString()}
+                  <strong>Requested:</strong> {requestedDate.toLocaleString()}
                 </p>
-              )}
-            </div>
+                {r.completed_at && (
+                  <p>
+                    <strong>Completed:</strong>{" "}
+                    {new Date(r.completed_at).toLocaleString()}
+                  </p>
+                )}
+                <p>
+                  <strong>Estimated Delivery:</strong>{" "}
+                  {deliveryDate.toLocaleDateString()}
+                </p>
+              </div>
 
-            {/* Progress bar */}
-            <div className="mt-4">
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div
-                  className={`h-2.5 rounded-full transition-all duration-500 ${
-                    r.status === "pending"
-                      ? "bg-yellow-500 w-1/4"
-                      : r.status === "out_for_delivery"
-                      ? "bg-blue-500 w-2/4"
-                      : r.status === "will_reach_today"
-                      ? "bg-purple-500 w-3/4"
-                      : "bg-green-600 w-full"
-                  }`}
-                ></div>
+              {/* Delivery Info */}
+              <div className="mt-3 text-sm text-gray-700 flex items-center gap-2">
+                <FaUser className="text-green-600" />
+                <div>
+                  <p className="font-medium">{deliveryGuy.name}</p>
+                  <p>{deliveryGuy.contact}</p>
+                </div>
+              </div>
+
+              {/* Progress bar */}
+              <div className="mt-4">
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div
+                    className={`h-2.5 rounded-full transition-all duration-500 ${
+                      r.status === "pending"
+                        ? "bg-yellow-500 w-1/4"
+                        : r.status === "out_for_delivery"
+                        ? "bg-blue-500 w-2/4"
+                        : r.status === "will_reach_today"
+                        ? "bg-purple-500 w-3/4"
+                        : "bg-green-600 w-full"
+                    }`}
+                  ></div>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

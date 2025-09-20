@@ -144,20 +144,6 @@ export default function AccountDrawer({ isOpen, onClose }) {
             {/* Action Buttons */}
             <div className="flex flex-col gap-3 mt-4">
               <button
-                onClick={() => navigate("/my-requests")}
-                className="flex items-center justify-center gap-2 px-5 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl shadow-md transition font-medium"
-              >
-                <FaRecycle /> My Requests
-              </button>
-
-              <button
-                onClick={() => navigate("/transactions")}
-                className="flex items-center justify-center gap-2 px-5 py-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl shadow-md transition font-medium"
-              >
-                <FaListAlt /> My Transactions
-              </button>
-
-              <button
                 onClick={() => navigate("/my-orders")}
                 className="flex items-center justify-center gap-2 px-5 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl shadow-md transition font-medium"
               >

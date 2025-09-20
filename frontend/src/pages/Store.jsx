@@ -7,7 +7,12 @@ export default function Store({ onTransactionAdded }) {
   const [userPoints, setUserPoints] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [redeemingId, setRedeemingId] = useState(null);
+
+  // For redeem modals
+  const [selectedReward, setSelectedReward] = useState(null);
+  const [quantity, setQuantity] = useState(1);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [redeeming, setRedeeming] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -19,7 +24,6 @@ export default function Store({ onTransactionAdded }) {
       }
 
       try {
-        // Fetch rewards (DB-driven)
         const [rewardsRes, profileRes] = await Promise.all([
           axios.get("http://localhost:5000/api/user/rewards/all", {
             headers: { Authorization: `Bearer ${token}` },
@@ -29,17 +33,12 @@ export default function Store({ onTransactionAdded }) {
           }),
         ]);
 
-        if (rewardsRes.data?.success) {
-          setRewards(rewardsRes.data.rewards || []);
-        } else {
-          setError(rewardsRes.data?.message || "Failed to fetch rewards.");
-        }
+        if (rewardsRes.data?.success) setRewards(rewardsRes.data.rewards || []);
+        else setError(rewardsRes.data?.message || "Failed to fetch rewards.");
 
-        if (profileRes.data?.success) {
+        if (profileRes.data?.success)
           setUserPoints(profileRes.data.user?.points || 0);
-        } else {
-          setError(profileRes.data?.message || "Failed to fetch profile.");
-        }
+        else setError(profileRes.data?.message || "Failed to fetch profile.");
       } catch (err) {
         setError(
           err.response?.data?.message ||
@@ -54,43 +53,54 @@ export default function Store({ onTransactionAdded }) {
     fetchData();
   }, []);
 
-  const handleRedeem = async (reward) => {
+  const openQuantityModal = (reward) => {
+    setSelectedReward(reward);
+    setQuantity(1);
+    setShowConfirm(false);
+  };
+
+  const proceedToConfirm = () => setShowConfirm(true);
+
+  // Redeem each quantity individually
+  const handleRedeem = async () => {
+    if (!selectedReward) return;
     const token = localStorage.getItem("token");
     if (!token) {
       alert("Please log in to redeem rewards.");
       return;
     }
 
+    setRedeeming(true);
     try {
-      setRedeemingId(reward._id);
-
-      const res = await axios.post(
-        "http://localhost:5000/api/user/rewards/redeem/create",
-        { reward_id: reward._id },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      if (res.data?.success) {
-        alert(res.data.message || "Redemption submitted.");
-
-        // Optimistically update points (backend already deducted)
-        setUserPoints((prev) =>
-          Math.max(0, prev - (reward.points_required || 0))
+      for (let i = 0; i < quantity; i++) {
+        const res = await axios.post(
+          "http://localhost:5000/api/user/rewards/redeem/create",
+          { reward_id: selectedReward._id, quantity: 1 },
+          { headers: { Authorization: `Bearer ${token}` } }
         );
 
-        // Notify parent so it can append a transaction entry if needed
+        if (!res.data?.success) {
+          alert(res.data?.message || "Could not redeem reward.");
+          break;
+        }
+
+        // Update points after each successful redemption
+        setUserPoints((prev) =>
+          Math.max(0, prev - selectedReward.points_required)
+        );
+
         if (onTransactionAdded) {
           onTransactionAdded({
-            _id: `temp-${Date.now()}`,
+            _id: `temp-${Date.now()}-${i}`,
             type: "debit",
-            points: reward.points_required,
-            description: `Redeemed reward: ${reward.name}`,
+            points: selectedReward.points_required,
+            description: `Redeemed 1 × ${selectedReward.name}`,
             createdAt: new Date().toISOString(),
           });
         }
-      } else {
-        alert(res.data?.message || "Could not redeem reward.");
       }
+
+      alert("Redemption completed!");
     } catch (err) {
       alert(
         err.response?.data?.message ||
@@ -98,7 +108,9 @@ export default function Store({ onTransactionAdded }) {
           "Something went wrong while redeeming."
       );
     } finally {
-      setRedeemingId(null);
+      setRedeeming(false);
+      setSelectedReward(null);
+      setShowConfirm(false);
     }
   };
 
@@ -137,21 +149,113 @@ export default function Store({ onTransactionAdded }) {
               </div>
 
               <button
-                disabled={
-                  userPoints < reward.points_required ||
-                  redeemingId === reward._id
-                }
-                onClick={() => handleRedeem(reward)}
+                disabled={userPoints < reward.points_required}
+                onClick={() => openQuantityModal(reward)}
                 className={`mt-4 px-4 py-2 rounded-lg font-medium text-white transition ${
                   userPoints >= reward.points_required
                     ? "bg-green-600 hover:bg-green-700"
                     : "bg-gray-400 cursor-not-allowed"
                 }`}
               >
-                {redeemingId === reward._id ? "Redeeming..." : "Redeem"}
+                Redeem
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Quantity Modal */}
+      {selectedReward && !showConfirm && (
+        <div className="fixed inset-0 bg-gray-200 bg-opacity-70 flex justify-center items-center">
+          <div className="bg-white p-8 rounded-2xl shadow-xl w-[28rem]">
+            <h2 className="text-2xl font-bold mb-6 text-green-700">
+              Redeem {selectedReward.name}
+            </h2>
+
+            <label className="block mb-2 text-gray-700 font-medium">
+              Quantity
+            </label>
+            <input
+              type="number"
+              min="1"
+              value={quantity}
+              onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
+              className="w-full border rounded-lg px-4 py-2 mb-5 text-lg"
+            />
+
+            <p className="mb-6 text-gray-700 text-lg">
+              Total Points Required:{" "}
+              <span className="font-semibold text-yellow-600">
+                {selectedReward.points_required * quantity}
+              </span>
+            </p>
+
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setSelectedReward(null)}
+                className="px-5 py-2 rounded-lg border border-gray-400 text-gray-600 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={proceedToConfirm}
+                disabled={
+                  userPoints < selectedReward.points_required * quantity
+                }
+                className="px-5 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+              >
+                Proceed
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Modal */}
+      {selectedReward && showConfirm && (
+        <div className="fixed inset-0 bg-gray-200 bg-opacity-70 flex justify-center items-center">
+          <div className="bg-white p-8 rounded-2xl shadow-xl w-[28rem]">
+            <h2 className="text-2xl font-bold mb-6 text-green-700">
+              Confirm Your Order
+            </h2>
+
+            <p className="mb-4 text-lg">
+              Are you sure you want to redeem{" "}
+              <span className="font-semibold">{quantity}</span> ×{" "}
+              <span className="font-semibold">{selectedReward.name}</span> for{" "}
+              <span className="font-semibold text-yellow-600">
+                {selectedReward.points_required * quantity} Points
+              </span>
+              ?
+            </p>
+
+            <p className="mb-6 text-gray-700 text-lg">
+              Remaining Balance:{" "}
+              <span className="font-semibold text-green-600">
+                {Math.max(
+                  userPoints - selectedReward.points_required * quantity,
+                  0
+                )}{" "}
+                Points
+              </span>
+            </p>
+
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setSelectedReward(null)}
+                className="px-5 py-2 rounded-lg border border-gray-400 text-gray-600 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRedeem}
+                disabled={redeeming}
+                className="px-5 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+              >
+                {redeeming ? "Processing..." : "Confirm"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
